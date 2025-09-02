@@ -6,10 +6,9 @@ RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-su
 # Write some metadata
 RUN echo VARIANT="CoreDNS bootc OS" && echo VARIANT_ID=com.github.caspertdk.homeserver-bootc >> /usr/lib/os-release
 
-# Install vmtoolsd and utilities
+# Install utilities
 RUN dnf -y install cloud-init firewalld python3-pip && \
     ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
-    systemctl enable vmtoolsd.service && \
     dnf clean all
 
 # pip3 dependencies
