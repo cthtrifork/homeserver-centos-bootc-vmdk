@@ -23,6 +23,9 @@ jobs:
         image:
           - IMAGE_NAME: homeserver-centos-bootc-vmdk
             CONTEXT: ./
+    permissions:
+        contents: read
+        packages: write
 
     steps:
       - name: Clone the repository
@@ -49,7 +52,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push to Azure Container registry
+      - name: Push to Container registry
         id: push-to-ghcr
         uses: redhat-actions/push-to-registry@v2
         if: ${{ github.event_name != 'pull_request' }}
