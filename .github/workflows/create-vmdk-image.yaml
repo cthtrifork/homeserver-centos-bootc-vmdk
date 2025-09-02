@@ -31,7 +31,7 @@ jobs:
         uses: ublue-os/bootc-image-builder-action@main
         with:
           config-file: ${{ matrix.image.CONTEXT }}/config.toml
-          type: vmdk
+          type: iso
           rootfs: xfs
           image: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
@@ -39,4 +39,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.image.IMAGE_NAME }}
+
           path: ${{ steps.create-vmdk.outputs.output-path }}
