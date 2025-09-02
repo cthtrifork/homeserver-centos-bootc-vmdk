@@ -1,0 +1,62 @@
+name: Build bootable container image
+on:
+  schedule:
+    - cron: '0 3 * * 0' # for security patching
+  workflow_dispatch:
+  push:
+    paths:
+      - "./Containerfile"
+      - "./config.toml"
+      - ".github/workflows/build-bootc-images.yaml"
+    branches:
+      - main
+
+
+jobs:
+  build-bootc-image:
+    name: Build bootable container image
+    runs-on: ubuntu-latest
+    environment: dev
+    strategy:
+      fail-fast: true
+      matrix:
+        image:
+          - IMAGE_NAME: homeserver-centos-bootc-vmdk
+            CONTEXT: ./
+
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v5
+
+      - name: Use buildah build to create the image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          context: ${{ matrix.image.CONTEXT }}
+          image: ${{ matrix.image.IMAGE_NAME }}
+          tags: latest ${{ github.sha }} 0.1.${{ github.run_number }}
+          build-args: |
+            REGISTRY_USERNAME=${{ github.actor }}
+            REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
+            REGISTRY_URL=ghcr.io
+          containerfiles: |
+            ${{ matrix.image.CONTEXT }}/Containerfile
+
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to Azure Container registry
+        id: push-to-ghcr
+        uses: redhat-actions/push-to-registry@v2
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ghcr.io
+
+      - name: Print image url
+        run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"

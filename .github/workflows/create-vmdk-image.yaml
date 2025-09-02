@@ -1,0 +1,42 @@
+name: Create vmdk
+on:
+  workflow_dispatch:
+
+jobs:
+  create-vmdk:
+    name: Build vmdk
+    runs-on: ubuntu-latest
+    environment: dev
+    strategy:
+      fail-fast: true
+      matrix:
+        image:
+          - IMAGE_NAME: homeserver-centos-bootc-vmdk
+            CONTEXT: .
+   
+
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v5
+
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create VMDK image
+        id: create-vmdk
+        uses: ublue-os/bootc-image-builder-action@main
+        with:
+          config-file: ${{ matrix.image.CONTEXT }}/config.toml
+          type: vmdk
+          rootfs: xfs
+          image: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+
+      - name: Upload VMDK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.image.IMAGE_NAME }}
+          path: ${{ steps.create-vmdk.outputs.output-path }}
