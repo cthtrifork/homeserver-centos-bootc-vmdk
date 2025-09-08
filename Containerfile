@@ -7,7 +7,7 @@ RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-su
 RUN echo VARIANT="CoreDNS bootc OS" && echo VARIANT_ID=com.github.caspertdk.homeserver-bootc >> /usr/lib/os-release
 
 # Install vmtoolsd and utilities
-RUN dnf -y install qemu-guest-agent cloud-init firewalld python3-pip && \
+RUN dnf -y install qemu-guest-agent firewalld python3-pip && \
     ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
     systemctl enable qemu-guest-agent && \
     dnf clean all
@@ -21,4 +21,5 @@ RUN pip3 install glances
 
 # Clean up caches in the image and lint the container
 RUN rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
+
 RUN bootc container lint
