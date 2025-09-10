@@ -13,7 +13,9 @@ on:
       - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-bootc-image:
@@ -26,13 +28,20 @@ jobs:
         image:
           - IMAGE_NAME: homeserver-centos-bootc-vmdk
             CONTEXT: ./
+    continue-on-error: false
     permissions:
-        contents: read
-        packages: write
+      contents: read
+      packages: write
+      id-token: write
 
     steps:
       - name: Clone the repository
         uses: actions/checkout@v5
+
+      - name: Load image
+        shell: bash
+        run: |
+          podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
       - name: Use buildah build to create the image
         id: build-image
