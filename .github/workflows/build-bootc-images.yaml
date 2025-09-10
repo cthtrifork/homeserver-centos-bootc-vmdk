@@ -41,6 +41,7 @@ jobs:
           context: ${{ matrix.image.CONTEXT }}
           image: ${{ matrix.image.IMAGE_NAME }}
           tags: latest ${{ github.sha }} 0.1.${{ github.run_number }}
+          layers: true
           build-args: |
             REGISTRY_USERNAME=${{ github.actor }}
             REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
