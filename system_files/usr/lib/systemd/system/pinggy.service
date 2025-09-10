@@ -5,7 +5,7 @@ Description=Pinggy Tunnel Startup
 [Service]
 EnvironmentFile=/etc/homeserver/metadata/pinggy
 ExecStart=
-ExecStart=ssh -p 443 \
+ExecStart=/usr/bin/env bash ssh -p 443 \
     -o StrictHostKeyChecking=no \
     -o ServerAliveInterval=30 \
     -R0:localhost:22 \
