@@ -15,9 +15,8 @@ RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REG
 
 # Install common utilities
 RUN dnf -y group install 'Development Tools'
-RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld python3-pip && \
-    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
-    dnf clean all
+RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld 
+# python3-pip
 
 # Configure repositories
 RUN dnf -y install 'dnf-command(config-manager)'
@@ -27,7 +26,7 @@ RUN dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.rep
 RUN dnf -y install gh --repo gh-cli
 
 # pip3 dependencies
-RUN pip3 install glances
+# RUN pip3 install glances
 
 # Install 3rd party software directly
 RUN curl -fsSL https://get.docker.com -o get-docker.sh
@@ -42,7 +41,8 @@ RUN systemctl enable docker && \
 #RUN firewall-offline-cmd --add-port 8006/tcp
 
 # Clean up caches in the image and lint the container
-RUN rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
+RUN dnf clean all && \
+    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
 
 RUN bootc container lint
 
