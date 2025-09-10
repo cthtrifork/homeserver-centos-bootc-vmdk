@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: '0 3 * * 0' # for security patching
   workflow_dispatch:
+  pull_request:
+    branches: 
+      - main
   push:
     paths:
       - "Containerfile"
@@ -64,3 +67,4 @@ jobs:
       - name: Print image url
 
         run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
+
