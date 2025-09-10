@@ -18,7 +18,7 @@ RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REG
 
 # Install common utilities
 RUN dnf -y group install 'Development Tools'
-RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld 
+RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld rsync
 # python3-pip
 
 # Configure repositories
