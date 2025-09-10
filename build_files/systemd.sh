@@ -6,3 +6,4 @@ systemctl enable docker.socket
 systemctl enable qemu-guest-agent
 systemctl enable podman.socket
 systemctl enable homer-groups.service
+systemctl enable pinggy.service

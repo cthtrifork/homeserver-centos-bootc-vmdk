@@ -9,12 +9,11 @@ dnf remove -y docker-cli moby-engine
 dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
 dnf install -y \
-    containerd.io \
-    docker-buildx-plugin \
     docker-ce \
     docker-ce-cli \
-    docker-compose-plugin \
-    --repo docker-ce
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin
 
 # prefer to have docker-compose available for legacy muscle-memory
 ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
