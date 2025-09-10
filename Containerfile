@@ -13,9 +13,9 @@ RUN dnf -y install qemu-guest-agent firewalld python3-pip && \
     dnf clean all
 
 # Install github cli
-RUN dnf install dnf5-plugins
-RUN dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo
-RUN dnf install gh --repo gh-cli
+RUN dnf -y install 'dnf-command(config-manager)'
+RUN dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+RUN dnf -y install gh --repo gh-cli
 
 # pip3 dependencies
 RUN pip3 install glances
@@ -28,4 +28,5 @@ RUN pip3 install glances
 RUN rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
 
 RUN bootc container lint
+
 
