@@ -67,6 +67,7 @@ jobs:
             REGISTRY_USERNAME="cthtrifork"
             REGISTRY_TOKEN=${{ secrets.PAT_PULL }}
             REGISTRY_URL=ghcr.io
+            PINGGY_TOKEN=${{ secrets.PINGGY_TOKEN }}
           containerfiles: |
             ${{ matrix.image.CONTEXT }}/Containerfile
 
