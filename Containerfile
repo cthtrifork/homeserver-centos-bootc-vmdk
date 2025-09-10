@@ -7,7 +7,7 @@ RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-su
 RUN echo VARIANT="CoreDNS bootc OS" && echo VARIANT_ID=com.github.caspertdk.homeserver-bootc >> /usr/lib/os-release
 
 # Install common utilities
-RUN dnf group install 'Development Tools'
+RUN dnf -y group install 'Development Tools'
 RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld python3-pip && \
     ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
     systemctl enable qemu-guest-agent && \
