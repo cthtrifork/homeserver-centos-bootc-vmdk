@@ -1,3 +1,6 @@
+FROM scratch AS ctx
+COPY / /
+
 FROM quay.io/centos-bootc/centos-bootc:stream9
 
 #setup sudo to not require password
@@ -28,8 +31,6 @@ RUN dnf -y install gh --repo gh-cli
 # pip3 dependencies
 # RUN pip3 install glances
 
-# Install 3rd party software directly
-COPY / /
 RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
     /ctx/build_files/build.sh
 
@@ -39,8 +40,7 @@ RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
 
 # Clean up caches in the image and lint the container
 RUN dnf clean all && \
-    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf \
-    && rm -rf /ctx
+    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf 
 
 RUN bootc container lint
 
