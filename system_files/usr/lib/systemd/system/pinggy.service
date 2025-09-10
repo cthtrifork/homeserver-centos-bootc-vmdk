@@ -3,7 +3,7 @@
 Description=Pinggy Tunnel Startup
 
 [Service]
-ExecStart=/usr/libexec/pinggy
+ExecStart=/usr/bin/env bash /usr/libexec/pinggy
 Restart=on-failure
 RestartSec=10s
 
