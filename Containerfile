@@ -17,7 +17,7 @@ RUN ln -s /run/user/0/containers/auth.json /etc/ostree/auth.json
 RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
 
 # Install common utilities
-RUN dnf -y group install 'Development Tools'
+#RUN dnf -y group install 'Development Tools'
 RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld rsync
 # python3-pip
 
