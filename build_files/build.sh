@@ -3,8 +3,9 @@
 
 set -ouex pipefail
 
-rsync -rvK /ctx/system_files/dx/ /
+rsync -rvK /ctx/system_files/ /
 
+/ctx/build_files/github-cli.sh
 /ctx/build_files/server-docker-ce.sh
-/ctx/build_files/systemd-dx.sh
+/ctx/build_files/systemd.sh
 #/ctx/build_files/cleanup.sh

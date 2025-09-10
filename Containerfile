@@ -23,16 +23,12 @@ RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld rsync
 
 # Configure repositories
 RUN dnf -y install 'dnf-command(config-manager)'
-RUN dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-
-# Install 3rd party software
-RUN dnf -y install gh --repo gh-cli
 
 # pip3 dependencies
 # RUN pip3 install glances
 
 RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
-    /ctx/build_files/build.sh
+    chmod -R +x /ctx/build_files && /ctx/build_files/build.sh
 
 # Networking
 #EXPOSE 8006
