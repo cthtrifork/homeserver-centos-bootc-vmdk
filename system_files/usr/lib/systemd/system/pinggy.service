@@ -3,7 +3,7 @@
 Description=Pinggy Tunnel Startup
 
 [Service]
-EnvironmentFile=/run/metadata/pinggy
+EnvironmentFile=/etc/homeserver/metadata/pinggy
 ExecStart=
 ExecStart=ssh -p 443 \
     -o StrictHostKeyChecking=no \
