@@ -6,6 +6,13 @@ RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-su
 # Write some metadata
 RUN echo VARIANT="CoreDNS bootc OS" && echo VARIANT_ID=com.github.caspertdk.homeserver-bootc >> /usr/lib/os-release
 
+# Registry auth
+ARG REGISTRY_TOKEN="notset"
+ARG REGISTRY_URL="notset"
+ARG REGISTRY_USERNAME="someuser"
+RUN ln -s /run/user/0/containers/auth.json /etc/ostree/auth.json
+RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
+
 # Install common utilities
 RUN dnf -y group install 'Development Tools'
 RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld python3-pip && \
