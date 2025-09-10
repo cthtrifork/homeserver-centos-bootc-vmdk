@@ -28,7 +28,7 @@ RUN dnf -y install 'dnf-command(config-manager)'
 # RUN pip3 install glances
 
 RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
-    chmod -R +x /ctx/build_files && /ctx/build_files/build.sh
+    /ctx/build_files/build.sh
 
 # Networking
 #EXPOSE 8006
