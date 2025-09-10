@@ -3,7 +3,9 @@
 Description=Pinggy Tunnel Startup
 
 [Service]
-ExecStart=/usr/bin/env bash /usr/libexec/pinggy
+EnvironmentFile=/run/metadata/pinggy
+ExecStart=
+ExecStart=ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:22 ${PINGGY_TOKEN}+tls@eu.a.pinggy.io
 Restart=on-failure
 RestartSec=10s
 
