@@ -10,7 +10,6 @@ RUN echo VARIANT="CoreDNS bootc OS" && echo VARIANT_ID=com.github.caspertdk.home
 RUN dnf -y group install 'Development Tools'
 RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld python3-pip && \
     ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants && \
-    systemctl enable qemu-guest-agent && \
     dnf clean all
 
 # Configure repositories
@@ -22,6 +21,14 @@ RUN dnf -y install gh --repo gh-cli
 
 # pip3 dependencies
 RUN pip3 install glances
+
+# Install 3rd party software directly
+RUN curl -fsSL https://get.docker.com -o get-docker.sh
+RUN sh get-docker.sh && rm get-docker.sh
+
+# Enable installed1 software
+RUN systemctl enable docker && \
+    systemctl enable qemu-guest-agent
 
 # Networking
 #EXPOSE 8006
