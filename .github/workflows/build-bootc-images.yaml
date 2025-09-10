@@ -7,12 +7,16 @@ on:
     branches: 
       - main
   push:
-    paths:
-      - "Containerfile"
-      - "config.toml"
-      - ".github/workflows/build-bootc-images.yaml"
+#    paths:
+#      - "Containerfile"
+#      - "config.toml"
+#      - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
+    paths-ignore:
+      - README.md
+      - .editorconfig
+      - .gitignore
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true

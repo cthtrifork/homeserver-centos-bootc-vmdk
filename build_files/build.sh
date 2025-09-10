@@ -3,7 +3,7 @@
 
 set -ouex pipefail
 
-rsync -rvK /ctx/system_files/ /
+rsync -rvpK /ctx/system_files/ /
 
 /ctx/build_files/github-cli.sh
 /ctx/build_files/server-docker-ce.sh
