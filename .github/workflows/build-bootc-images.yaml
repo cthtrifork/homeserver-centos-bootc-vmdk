@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "./Containerfile"
-      - "./config.toml"
+      - "Containerfile"
+      - "config.toml"
       - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
@@ -62,4 +62,5 @@ jobs:
           registry: ghcr.io/${{ github.repository }}
 
       - name: Print image url
+
         run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
