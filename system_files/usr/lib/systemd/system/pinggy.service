@@ -1,0 +1,11 @@
+# https://pinggy.io/docs/run_tunnel_on_startup/linux/
+[Unit]
+Description=Pinggy Tunnel Startup
+
+[Service]
+ExecStart=/usr/libexec/pinggy
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

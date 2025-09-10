@@ -1,3 +1,6 @@
+FROM scratch AS ctx
+COPY / /
+
 FROM quay.io/centos-bootc/centos-bootc:stream9
 
 #setup sudo to not require password
@@ -14,27 +17,18 @@ RUN ln -s /run/user/0/containers/auth.json /etc/ostree/auth.json
 RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
 
 # Install common utilities
-RUN dnf -y group install 'Development Tools'
-RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld 
+#RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
+RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync
 # python3-pip
 
 # Configure repositories
 RUN dnf -y install 'dnf-command(config-manager)'
-RUN dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-
-# Install 3rd party software
-RUN dnf -y install gh --repo gh-cli
 
 # pip3 dependencies
 # RUN pip3 install glances
 
-# Install 3rd party software directly
-RUN curl -fsSL https://get.docker.com -o get-docker.sh
-RUN sh get-docker.sh && rm get-docker.sh
-
-# Enable installed1 software
-RUN systemctl enable docker && \
-    systemctl enable qemu-guest-agent
+RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
+    /ctx/build_files/build.sh
 
 # Networking
 #EXPOSE 8006
@@ -42,7 +36,7 @@ RUN systemctl enable docker && \
 
 # Clean up caches in the image and lint the container
 RUN dnf clean all && \
-    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
+    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf 
 
 RUN bootc container lint
 
