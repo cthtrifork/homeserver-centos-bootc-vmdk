@@ -69,14 +69,11 @@ jobs:
           containerfiles: |
             ${{ matrix.image.CONTEXT }}/Containerfile
 
-      - name: rechunk
-        shell: bash
-        run: |
-          podman unshare rpm-ostree experimental compose build-chunked-oci \
-            --bootc \
-            --format-version=1 \
-            --from=ecf1898f8c12 \
-            --output containers-storage:${{ steps.build-image.outputs.image }}
+      - name: Rechunk Image
+        uses: hhd-dev/rechunk@v1.2.2
+        with:
+          ref: ${{ steps.build-image.outputs.image }}
+          #prev-ref: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
       - name: Push to Container registry
         id: push-to-ghcr
