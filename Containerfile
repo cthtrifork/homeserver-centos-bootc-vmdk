@@ -16,16 +16,19 @@ RUN dnf -y install procps-ng curl file qemu-guest-agent git firewalld python3-pi
 # Configure repositories
 RUN dnf -y install 'dnf-command(config-manager)'
 RUN dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-RUN dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
 # Install 3rd party software
-RUN dnf -y install gh --repo gh-cli docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+RUN dnf -y install gh --repo gh-cli
 
 # Enable 3rd party software
-RUN systemctl enable --now docker
+RUN systemctl enable docker
 
 # pip3 dependencies
 RUN pip3 install glances
+
+# Install 3rd party software directly
+RUN curl -fsSL https://get.docker.com -o get-docker.sh
+RUN sh get-docker.sh && rm get-docker.sh
 
 # Networking
 #EXPOSE 8006
