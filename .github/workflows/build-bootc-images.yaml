@@ -53,6 +53,7 @@ jobs:
         shell: bash
         run: |
           podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+          podman images
 
       - name: Use buildah build to create the image
         id: build-image
@@ -74,6 +75,11 @@ jobs:
         with:
           ref: ghcr.io/${{ github.repository }}/${{ steps.build-image.outputs.image }}
           #prev-ref: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+
+      - name: Show image change
+        shell: bash
+        run: |
+          podman images
 
       - name: Push to Container registry
         id: push-to-ghcr
