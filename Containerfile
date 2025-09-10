@@ -29,12 +29,14 @@ RUN dnf -y install gh --repo gh-cli
 # RUN pip3 install glances
 
 # Install 3rd party software directly
-RUN curl -fsSL https://get.docker.com -o get-docker.sh
-RUN sh get-docker.sh && rm get-docker.sh
+RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
+    /ctx/build_files/server-docker-ce.sh
 
-# Enable installed1 software
+# Enable installed software
 RUN systemctl enable docker && \
-    systemctl enable qemu-guest-agent
+    systemctl enable qemu-guest-agent && \
+    systemctl enable docker.socket && \
+    systemctl enable podman.socket
 
 # Networking
 #EXPOSE 8006
@@ -42,7 +44,8 @@ RUN systemctl enable docker && \
 
 # Clean up caches in the image and lint the container
 RUN dnf clean all && \
-    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf
+    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf \
+    && rm -rf /ctx
 
 RUN bootc container lint
 
