@@ -38,6 +38,13 @@ jobs:
       - name: Clone the repository
         uses: actions/checkout@v5
 
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Load image
         shell: bash
         run: |
@@ -57,13 +64,6 @@ jobs:
             REGISTRY_URL=ghcr.io
           containerfiles: |
             ${{ matrix.image.CONTEXT }}/Containerfile
-
-      - name: Log in to the Container registry
-        uses: redhat-actions/podman-login@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push to Container registry
         id: push-to-ghcr
