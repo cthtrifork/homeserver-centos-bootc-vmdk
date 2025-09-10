@@ -72,7 +72,7 @@ jobs:
       - name: Rechunk Image
         uses: hhd-dev/rechunk@v1.2.2
         with:
-          ref: ${{ steps.build-image.outputs.image }}
+          ref: ghcr.io/${{ github.repository }}/${{ steps.build-image.outputs.image }}
           #prev-ref: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
       - name: Push to Container registry
