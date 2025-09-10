@@ -29,6 +29,7 @@ RUN dnf -y install gh --repo gh-cli
 # RUN pip3 install glances
 
 # Install 3rd party software directly
+COPY / /
 RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
     /ctx/build_files/build.sh
 
