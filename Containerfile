@@ -35,8 +35,6 @@ RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build_files/build.sh
 
-RUN systemctl mask bootc-fetch-apply-updates.timer
-
 # Networking
 #EXPOSE 8006
 #RUN firewall-offline-cmd --add-port 8006/tcp
