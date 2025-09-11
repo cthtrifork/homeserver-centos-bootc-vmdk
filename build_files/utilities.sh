@@ -60,5 +60,5 @@ curl -sLo /tmp/yq \
 install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
 
 log "Installing helm"
-curl -sLo /tmp/helm.tar.gz "https://get.helm.sh/$(curl -L -s https://get.helm.sh/helm-latest-version)-${MACHINE}-${ARCH}.tar.gz"
+curl -sLo /tmp/helm.tar.gz "https://get.helm.sh/helm-$(curl -L -s https://get.helm.sh/helm-latest-version)-${MACHINE}-${ARCH}.tar.gz"
 tar -zxvf /tmp/helm.tar.gz.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE --exclude README.md
