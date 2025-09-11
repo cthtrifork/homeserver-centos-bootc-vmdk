@@ -221,12 +221,13 @@ jobs:
           - Layers: ${{ steps.meta.outputs.base_layers }} → ${{ steps.meta.outputs.pr_layers }} (**$(( ${{ steps.meta.outputs.pr_layers }} - ${{ steps.meta.outputs.base_layers }} ))**)
           - Labels changed: ${{ steps.meta.outputs.labels_changed }}
           - Trivy HIGH/CRIT: +${new_n} / -${fix_n} (new: ${new_top})
-          EOF
+EOF
 
       - name: Sticky PR comment (update in-place)
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: comment.md
+
 
 
 
