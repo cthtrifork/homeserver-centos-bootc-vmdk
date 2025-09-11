@@ -56,10 +56,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load image
-        shell: bash
-        run: |
-          podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+      #- name: Load image
+      #  shell: bash
+      #  run: |
+      #    podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
       - name: Get current date
         id: date
@@ -126,4 +126,5 @@ jobs:
       - name: Print image url
 
         run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
+
 
