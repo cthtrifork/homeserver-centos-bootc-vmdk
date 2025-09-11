@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+ssh -p 443 \
+    -o StrictHostKeyChecking=no \
+    -o ServerAliveInterval=30 \
+    -R0:localhost:22 \
+    ${PINGGY_TOKEN}+tls@eu.a.pinggy.io
