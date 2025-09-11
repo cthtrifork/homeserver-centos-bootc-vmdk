@@ -60,6 +60,7 @@ jobs:
         run: |
           podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
+          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
 
       - name: Get current date
         id: date
@@ -160,12 +161,10 @@ jobs:
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
         if: ${{ github.event_name == 'pull_request' }}
-        env:
-          PR_IMAGE: ${{ steps.meta.outputs.pr_image }}
-        run: podman save "$PR_IMAGE" -o pr-image.tar
+        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
 
       - name: Trivy (base:latest)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ steps.meta.outputs.base_image }}
           format: json
@@ -174,7 +173,7 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Trivy (PR)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.33.1
         if: ${{ github.event_name == 'pull_request' }}
         with:
           input: /github/workspace/pr-image.tar
@@ -229,6 +228,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
