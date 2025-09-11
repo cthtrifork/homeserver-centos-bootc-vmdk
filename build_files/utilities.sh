@@ -20,7 +20,7 @@ curl -sLo /tmp/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io
 install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 
 log "Installing kubelogin"
-curl -sLo /tmp/kind \
+curl -sLo /tmp/kubelogin \
     "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}_${ARCH}.zip)"
 unzip /tmp/kubelogin.zip -d /usr/bin/
 
@@ -59,3 +59,6 @@ log "Installing yq"
 curl -sLo /tmp/yq \
     "$(/ctx/build_files/github-release-url.sh mikefarah/yq ${MACHINE}_${ARCH})"
 install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
+
+log "Installing helm"
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash # eww
