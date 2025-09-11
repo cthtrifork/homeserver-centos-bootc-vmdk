@@ -29,3 +29,9 @@ log "Installing flux"
 curl -sLo /tmp/flux.tar.gz \
     "$(/ctx/build_files/github-release-url.sh fluxcd/flux2 linux_amd64.tar.gz)"
 tar -zxvf /tmp/flux.tar.gz -C /usr/bin/
+
+# sops
+log "Installing sops"
+curl -sLo /tmp/sops \
+    "$(/ctx/build_files/github-release-url.sh getsops/sops linux.amd64)"
+install -o root -g root -m 0755 /tmp/sops /usr/bin/sops
