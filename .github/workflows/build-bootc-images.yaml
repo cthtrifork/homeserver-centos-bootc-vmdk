@@ -64,9 +64,8 @@ jobs:
       - name: Get current date
         id: date
         run: |
-          # This generates a timestamp like what is defined on the ArtifactHub documentation
-          # E.G: 2022-02-08T15:38:15Z'
-          # https://artifacthub.io/docs/topics/repositories/container-images/
+          # This generates a timestamp like
+          # 2022-02-08T15:38:15Z
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
@@ -123,73 +122,11 @@ jobs:
           tags: ${{ steps.build-image.outputs.tags }}
           registry: ghcr.io/${{ github.repository }}
 
-      - name: Print image url
-        run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-name: Build bootc images + PR image diff"
-
-
-  image-diff-comment:
-    name: PR image diff comment
-    #runs-on: ubuntu-24.04
-    needs: build-bootc-image
-    if: ${{ github.event_name == 'pull_request' }}
-    steps:
-          
-      - name: Resolve images (base from GHCR, PR from local Podman)
-        id: refs
-        env:
-          REPO: ghcr.io/${{ github.repository }}
-          PRNUM: ${{ github.event.number }}
-          SHA: ${{ github.sha }}
-          REFNAME: ${{ github.ref_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          podman images
-
-          BASE_IMAGE="${REPO}:latest"
-          echo "Pulling base image ${BASE_IMAGE}..."
-          podman pull "$BASE_IMAGE" >/dev/null
-
-          # Try common local tags your build likely used (no push in PRs)
-          CANDIDATES=(
-            "${REPO}:pr-${PRNUM}"
-            "${REPO}:${SHA}"
-            "${REPO}:${REFNAME}"
-            "localhost/${{ github.event.repository.name }}:pr-${PRNUM}"
-            "localhost/${{ github.event.repository.name }}:${SHA}"
-            "localhost/${{ github.event.repository.name }}:${REFNAME}"
-          )
-
-          PR_IMAGE=""
-          for c in "${CANDIDATES[@]}"; do
-            if podman image exists "$c"; then
-              PR_IMAGE="$c"
-              break
-            fi
-          done
-
-          # Fallback: newest local image for this repo that is NOT :latest
-          if [[ -z "$PR_IMAGE" ]]; then
-            PR_IMAGE=$(podman images --format '{{.Repository}}:{{.Tag}} {{.Created}}' \
-              | awk -v repo="${REPO}" '$1 ~ repo && $1 !~ /:latest$/ {print $0}' \
-              | sort -rk2 | head -n1 | awk '{print $1}')
-          fi
-
-          if [[ -z "$PR_IMAGE" ]]; then
-            echo "::error::Could not resolve a local PR image tag. Ensure your build tags something like pr-<number> or <sha>."
-            exit 1
-          fi
-
-          echo "base=$BASE_IMAGE" >> "$GITHUB_OUTPUT"
-          echo "pr=$PR_IMAGE" >> "$GITHUB_OUTPUT"
-          echo "Resolved PR image: $PR_IMAGE"
-
       - name: Inspect images (Podman)
         id: meta
         env:
-          BASE_IMAGE: ${{ steps.refs.outputs.base }}
-          PR_IMAGE: ${{ steps.refs.outputs.pr }}
+          BASE_IMAGE: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+          PR_IMAGE: localhost/${{ matrix.image.IMAGE_NAME }}:latest
         shell: bash
         run: |
           set -euo pipefail
@@ -238,16 +175,15 @@ jobs:
           ignore-unfixed: true
           severity: HIGH,CRITICAL
 
-      - name: Trivy (PR tar via --input)
+      - name: Trivy (PR)
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          args: >
-            image --input pr-image.tar
-            --format json
-            --output pr_trivy.json
-            --ignore-unfixed
-            --severity HIGH,CRITICAL
-
+          input: /github/workspace/pr-image.tar
+          format: json
+          output: pr_trivy.json
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          
       - name: Build concise report
         id: report
         shell: bash
@@ -291,6 +227,7 @@ EOF
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: comment.md
+
 
 
 
