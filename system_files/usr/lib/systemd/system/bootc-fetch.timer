@@ -1,0 +1,9 @@
+[Unit]
+Description=Fetch bootc image ASAP
+[Timer]
+# OnCalendar=*-*-* 12:30:00
+OnUnitActiveSec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
