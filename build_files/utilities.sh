@@ -25,7 +25,7 @@ curl -sLo /tmp/kubelogin.zip \
     "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}.${ARCH}.zip)"
 unzip /tmp/kubelogin.zip -d /usr/bin/ -x "LICENSE" "README.md"
 # Create symlinks so kubectl recognizes the plugin
-sudo ln -sf /usr/bin/kubelogin /usr/bin/kubectl-oidc-login
+ln -sf /usr/bin/kubelogin /usr/bin/kubectl-oidc-login
 
 log "Installing kind"
 curl -sLo /tmp/kind \
