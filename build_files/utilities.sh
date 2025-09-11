@@ -36,7 +36,7 @@ tar -zxvf /tmp/flux.tar.gz -C /usr/bin/
 
 log "Installing kustomize"
 curl -sLo /tmp/kustomize.tar.gz \
-    "$(/ctx/build_files/github-release-url.sh ubernetes-sigs/kustomize ${MACHINE}.${ARCH}.tar.gz)"
+    "$(/ctx/build_files/github-release-url.sh kubernetes-sigs/kustomize ${MACHINE}.${ARCH}.tar.gz)"
 tar -zxvf /tmp/kustomize.tar.gz -C /usr/bin/
 
 log "Installing k9s"
