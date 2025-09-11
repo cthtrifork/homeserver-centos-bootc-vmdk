@@ -7,31 +7,62 @@ log() {
   echo "=== $* ==="
 }
 
-# age is an unlikely candidate for EPEL until the Go packaging thing happens
+ARCH="amd64"
+MACHINE="linux"
+
 log "Installing age"
 curl -sLo /tmp/age.tar.gz \
-    "$(/ctx/build_files/github-release-url.sh FiloSottile/age linux-amd64.tar.gz)"
+    "$(/ctx/build_files/github-release-url.sh FiloSottile/age ${MACHINE}-${ARCH}.tar.gz)"
 tar -zxvf /tmp/age.tar.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE
 
-# kubectl
 log "Installing kubectl"
-curl -sLo /tmp/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+curl -sLo /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/${MACHINE}/${ARCH}/kubectl"
 install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 
-# kind
+log "Installing kubelogin"
+curl -sLo /tmp/kubelogin.zip \
+    "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}.${ARCH}.zip)"
+unzip /tmp/kubelogin.zip -d /usr/bin/ -x "LICENSE" "README.md"
+# Create symlinks so kubectl recognizes the plugin
+ln -sf /usr/bin/kubelogin /usr/bin/kubectl-oidc-login
+
 log "Installing kind"
 curl -sLo /tmp/kind \
-    "$(/ctx/build_files/github-release-url.sh kubernetes-sigs/kind linux-amd64)"
+    "$(/ctx/build_files/github-release-url.sh kubernetes-sigs/kind ${MACHINE}.${ARCH})"
 install -o root -g root -m 0755 /tmp/kind /usr/bin/kind
 
-# fluxcd
 log "Installing flux"
 curl -sLo /tmp/flux.tar.gz \
-    "$(/ctx/build_files/github-release-url.sh fluxcd/flux2 linux_amd64.tar.gz)"
+    "$(/ctx/build_files/github-release-url.sh fluxcd/flux2 ${MACHINE}.${ARCH}.tar.gz)"
 tar -zxvf /tmp/flux.tar.gz -C /usr/bin/
 
-# sops
+log "Installing kustomize"
+curl -sLo /tmp/kustomize.tar.gz \
+    "$(/ctx/build_files/github-release-url.sh kubernetes-sigs/kustomize ${MACHINE}.${ARCH}.tar.gz)"
+tar -zxvf /tmp/kustomize.tar.gz -C /usr/bin/
+
+log "Installing k9s"
+curl -sLo /tmp/k9s.tar.gz \
+    "$(/ctx/build_files/github-release-url.sh derailed/k9s ${MACHINE}.${ARCH}.tar.gz)"
+tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md
+
 log "Installing sops"
 curl -sLo /tmp/sops \
-    "$(/ctx/build_files/github-release-url.sh getsops/sops linux.amd64)"
+    "$(/ctx/build_files/github-release-url.sh getsops/sops ${MACHINE}.${ARCH})"
 install -o root -g root -m 0755 /tmp/sops /usr/bin/sops
+
+log "Installing jq"
+curl -sLo /tmp/jq \
+    "$(/ctx/build_files/github-release-url.sh jqlang/jq ${MACHINE}.${ARCH})"
+install -o root -g root -m 0755 /tmp/jq /usr/bin/jq
+
+log "Installing yq"
+curl -sLo /tmp/yq \
+    "$(/ctx/build_files/github-release-url.sh mikefarah/yq ${MACHINE}.${ARCH})"
+install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
+
+log "Installing helm"
+HELM_VERSION=$(curl -L -s https://get.helm.sh/helm-latest-version)
+curl -sLo /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-${MACHINE}-${ARCH}.tar.gz"
+tar -zxvf /tmp/helm.tar.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE --exclude README.md
