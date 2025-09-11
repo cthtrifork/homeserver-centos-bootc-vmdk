@@ -29,9 +29,19 @@ tar -zxvf /tmp/flux.tar.gz -C /usr/bin/
 log "Installing k9s"
 curl -sLo /tmp/k9s.tar.gz \
     "$(/ctx/build_files/github-release-url.sh derailed/k9s Linux_amd64.tar.gz)"
-tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md
+tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md || file /tmp/k9s.tar.gz
 
 log "Installing sops"
 curl -sLo /tmp/sops \
     "$(/ctx/build_files/github-release-url.sh getsops/sops linux.amd64)"
 install -o root -g root -m 0755 /tmp/sops /usr/bin/sops
+
+log "Installing jq"
+curl -sLo /tmp/jq \
+    "$(/ctx/build_files/github-release-url.sh qlang/jq linux-amd64)"
+install -o root -g root -m 0755 /tmp/jq /usr/bin/jq
+
+log "Installing yq"
+curl -sLo /tmp/yq \
+    "$(/ctx/build_files/github-release-url.sh mikefarah/yq linux_amd64)"
+install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
