@@ -15,10 +15,16 @@ dnf clean all
 
 # Clean temporary files
 rm -rf /tmp/*
+rm -rf /var/*
+mkdir -p /tmp
+mkdir -p /var/tmp && chmod -R 1777 /var/tmp
 
-# Clean /var directory while preserving essential files
-find /var/* -maxdepth 0 -type d \! -name cache -exec rm -fr {} \;
-find /var/cache/* -maxdepth 0 -type d \! -name libdnf5 \! -name rpm-ostree -exec rm -fr {} \;
+# Clean /var but preserve cache
+#find /var/* -maxdepth 0 -type d \! -name cache -exec rm -fr {} \;
+# Clean /var/cache but preserve dnf + rpm-ostree
+#find /var/cache/* -maxdepth 0 -type d \! -name dnf \! -name rpm-ostree -exec rm -fr {} \;
+# Clean dnf cache
+#rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf 
 
 # Restore and setup directories
 mkdir -p /var/tmp
