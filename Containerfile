@@ -30,7 +30,12 @@ RUN dnf -y install 'dnf-command(config-manager)'
 # RUN pip3 install glances
 
 RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
+    #--mount=type=cache,dst=/var/cache \
+    #--mount=type=cache,dst=/var/log \
+    --mount=type=tmpfs,dst=/tmp \
     /ctx/build_files/build.sh
+
+RUN systemctl mask bootc-fetch-apply-updates.timer
 
 # Networking
 #EXPOSE 8006
