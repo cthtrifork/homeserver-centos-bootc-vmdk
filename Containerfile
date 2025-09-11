@@ -36,10 +36,6 @@ RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
 #EXPOSE 8006
 #RUN firewall-offline-cmd --add-port 8006/tcp
 
-# Clean up caches in the image and lint the container
-RUN dnf clean all && \
-    rm /var/{cache,lib}/dnf /var/lib/rhsm /var/cache/ldconfig -rf 
-
 RUN bootc container lint
 
 
