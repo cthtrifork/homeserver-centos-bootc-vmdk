@@ -226,7 +226,37 @@ jobs:
           output: pr_trivy.json
           ignore-unfixed: true
           severity: HIGH,CRITICAL
-          
+
+      - name: Publish Trivy Output to Summary
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [[ -s pr_trivy.json ]]; then
+            {
+              echo "### Security Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```json'
+              cat pr_trivy.json
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Publish Trivy Output to Summary
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          if [[ -s base_trivy.json ]]; then
+            {
+              echo "### Security Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```json'
+              cat base_trivy.json
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Build report
         if: ${{ github.event_name == 'pull_request' }}
         id: report
@@ -273,6 +303,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
