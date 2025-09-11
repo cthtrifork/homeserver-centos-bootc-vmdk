@@ -13,7 +13,7 @@ curl -Lo /tmp/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/
 install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 
 # kind
-curl -Lo /tmp/kind.tar.gz \
+curl -Lo /tmp/kind \
     "$(/ctx/build_files/github-release-url.sh kubernetes-sigs/kind linux-amd64)"
 install -o root -g root -m 0755 /tmp/kind /usr/bin/kind
 
