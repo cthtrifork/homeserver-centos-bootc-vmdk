@@ -22,7 +22,7 @@ install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 log "Installing kubelogin"
 curl -sLo /tmp/kubelogin.zip \
     "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}.${ARCH}.zip)"
-unzip /tmp/kubelogin.zip -d /usr/bin/
+unzip /tmp/kubelogin.zip -d /usr/bin/ || file /tmp/kubelogin.zip 
 
 log "Installing kind"
 curl -sLo /tmp/kind \
@@ -61,4 +61,5 @@ curl -sLo /tmp/yq \
 install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
 
 log "Installing helm"
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash # eww
+curl -sLo /tmp/helm.tar.gz "https://get.helm.sh/$(curl -L -s https://get.helm.sh/helm-latest-version)-${MACHINE}-${ARCH}.tar.gz"
+tar -zxvf /tmp/helm.tar.gz.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE --exclude README.md
