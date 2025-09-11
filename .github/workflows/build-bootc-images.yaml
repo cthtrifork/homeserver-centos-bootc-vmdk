@@ -27,18 +27,16 @@ env:
   #IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
   DEFAULT_TAG: "latest"
-
+  BASE_IMAGE: ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+  PR_IMAGE: localhost/${{ env.IMAGE_NAME }}:latest
+  IMAGE_NAME: homeserver-centos-bootc
+  CONTEXT: ./
+  
 jobs:
   build-bootc-image:
     name: Build bootable container image
     runs-on: ubuntu-latest
     environment: dev
-    strategy:
-      fail-fast: true
-      matrix:
-        image:
-          - IMAGE_NAME: homeserver-centos-bootc
-            CONTEXT: ./
     continue-on-error: false
     permissions:
       contents: read
@@ -60,7 +58,7 @@ jobs:
       - name: Load image
         shell: bash
         run: |
-          podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Get current date
         id: date
@@ -86,10 +84,10 @@ jobs:
           labels: |
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}/refs/heads/main/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}/blob/main/Containerfile
-            org.opencontainers.image.title=${{ matrix.image.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/main/Containerfile
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             containers.bootc=1
@@ -100,8 +98,8 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          context: ${{ matrix.image.CONTEXT }}
-          image: ${{ matrix.image.IMAGE_NAME }}
+          context: ${{ env.CONTEXT }}
+          image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           layers: true
@@ -112,7 +110,7 @@ jobs:
             REGISTRY_URL=ghcr.io
             PINGGY_TOKEN=${{ secrets.PINGGY_TOKEN }}
           containerfiles: |
-            ${{ matrix.image.CONTEXT }}/Containerfile
+            ${{ env.CONTEXT }}/Containerfile
 
       - name: Push to Container registry
         id: push-to-ghcr
@@ -125,9 +123,7 @@ jobs:
 
       - name: Inspect images (Podman)
         id: meta
-        env:
-          BASE_IMAGE: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
-          PR_IMAGE: localhost/${{ matrix.image.IMAGE_NAME }}:latest
+        if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -162,11 +158,11 @@ jobs:
 
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
+        if: ${{ github.event_name == 'pull_request' }}
         env:
           PR_IMAGE: ${{ steps.meta.outputs.pr_image }}
         run: podman save "$PR_IMAGE" -o pr-image.tar
 
-      # Trivy scans via marketplace action (base via image-ref; PR via --input)
       - name: Trivy (base:latest)
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -178,6 +174,7 @@ jobs:
 
       - name: Trivy (PR)
         uses: aquasecurity/trivy-action@0.24.0
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           input: /github/workspace/pr-image.tar
           format: json
@@ -185,7 +182,8 @@ jobs:
           ignore-unfixed: true
           severity: HIGH,CRITICAL
           
-      - name: Build concise report
+      - name: Build report
+        if: ${{ github.event_name == 'pull_request' }}
         id: report
         shell: bash
         run: |
@@ -226,9 +224,11 @@ jobs:
 
       - name: Sticky PR comment (update in-place)
         uses: marocchino/sticky-pull-request-comment@v2
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
