@@ -163,12 +163,29 @@ jobs:
 
       - name: Trivy (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           format: json
           output: base_trivy.json
           ignore-unfixed: true
           severity: HIGH,CRITICAL
+
+      - name: Trivy (base:latest)
+        uses: aquasecurity/trivy-action@0.33.1
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        with:
+          sarif_file: 'trivy-results.sarif'
 
       - name: Trivy (PR)
         uses: aquasecurity/trivy-action@0.33.1
@@ -215,7 +232,7 @@ jobs:
             echo
             echo "- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}"
             echo "- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)"
-            echo "- Layers: ${{ steps.meta.outputs.base_layers }} → ${{ steps.meta.outputs.pr_layers }} (**${layer_delta}**)"
+            echo "- Layers: ${{ steps.meta.outputs.base_layers }} → ${{ steps.meta.outputs.pr_layers }}" # (**${layer_delta}**)
             echo "- Labels changed: ${{ steps.meta.outputs.labels_changed }}"
             echo "- Trivy HIGH/CRIT: +${new_n} / -${fix_n} (new: ${new_top})"
           } > comment.md
@@ -226,6 +243,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
