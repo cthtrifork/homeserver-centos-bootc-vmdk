@@ -16,7 +16,7 @@ curl -sLo /tmp/age.tar.gz \
 tar -zxvf /tmp/age.tar.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE
 
 log "Installing kubectl"
-local KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
 curl -sLo /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/${MACHINE}/${ARCH}/kubectl"
 install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 
@@ -24,6 +24,8 @@ log "Installing kubelogin"
 curl -sLo /tmp/kubelogin.zip \
     "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}.${ARCH}.zip)"
 unzip /tmp/kubelogin.zip -d /usr/bin/ -x "LICENSE" "README.md"
+# Create symlinks so kubectl recognizes the plugin
+sudo ln -sf /usr/bin/kubelogin /usr/bin/kubectl-oidc-login
 
 log "Installing kind"
 curl -sLo /tmp/kind \
@@ -61,6 +63,6 @@ curl -sLo /tmp/yq \
 install -o root -g root -m 0755 /tmp/yq /usr/bin/yq
 
 log "Installing helm"
-local HELM_VERSION=$(curl -L -s https://get.helm.sh/helm-latest-version)
+HELM_VERSION=$(curl -L -s https://get.helm.sh/helm-latest-version)
 curl -sLo /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-${MACHINE}-${ARCH}.tar.gz"
 tar -zxvf /tmp/helm.tar.gz -C /usr/bin/ --strip-components=1 --exclude=LICENSE --exclude README.md
