@@ -214,8 +214,8 @@ jobs:
             echo "### 🧾 Image diff"
             echo
             echo "**Repo:** ghcr.io/${{ github.repository }}"
-            echo "**Base:** \`${{ steps.meta.outputs.base_image: }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
-            echo "**PR:** \`${{ steps.meta.outputs.pr_image: }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
+            echo "**Base:** \`${{ steps.meta.outputs.base_image }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
+            echo "**PR:** \`${{ steps.meta.outputs.pr_image }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
             echo
             echo "- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}"
             echo "- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)"
@@ -229,6 +229,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
