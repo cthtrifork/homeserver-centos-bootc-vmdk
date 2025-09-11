@@ -27,9 +27,9 @@ env:
   #IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
   DEFAULT_TAG: "latest"
-  IMAGE_NAME: homeserver-centos-bootc
-  BASE_IMAGE: ghcr.io/${{ github.repository }}/homeserver-centos-bootc:latest
-  PR_IMAGE: localhost/homeserver-centos-bootc:latest
+  IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE: ghcr.io/${{ github.repository }}/${{ github.repository }}:latest
+  PR_IMAGE: localhost/${{ github.repository }}:latest # this should work when the image has been built
   CONTEXT: ./
   
 jobs:
@@ -59,6 +59,7 @@ jobs:
         shell: bash
         run: |
           podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          systemctl --user enable --now podman.socket # for trivy
 
       - name: Get current date
         id: date
@@ -228,6 +229,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
