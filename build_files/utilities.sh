@@ -22,7 +22,7 @@ install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
 log "Installing kubelogin"
 curl -sLo /tmp/kubelogin.zip \
     "$(/ctx/build_files/github-release-url.sh int128/kubelogin ${MACHINE}.${ARCH}.zip)"
-unzip /tmp/kubelogin.zip -d /usr/bin/ || file /tmp/kubelogin.zip 
+unzip /tmp/kubelogin.zip -d /usr/bin/ -x "LICENSE" "README.md"
 
 log "Installing kind"
 curl -sLo /tmp/kind \
@@ -40,7 +40,7 @@ curl -sLo /tmp/kustomize.tar.gz \
 tar -zxvf /tmp/kustomize.tar.gz -C /usr/bin/
 
 log "Installing k9s"
-curl -sLo /tmp/k9s.rpm \
+curl -sLo /tmp/k9s.tar.gz \
     "$(/ctx/build_files/github-release-url.sh derailed/k9s ${MACHINE}.${ARCH}.tar.gz)"
 tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md
 
