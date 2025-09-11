@@ -124,9 +124,173 @@ jobs:
           registry: ghcr.io/${{ github.repository }}
 
       - name: Print image url
+        run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-name: Build bootc images + PR image diff"
 
-        run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
 
+  image-diff-comment:
+    name: PR image diff comment
+    #runs-on: ubuntu-24.04
+    needs: build-bootc-image
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+          
+      - name: Resolve images (base from GHCR, PR from local Podman)
+        id: refs
+        env:
+          REPO: ghcr.io/${{ github.repository }}
+          PRNUM: ${{ github.event.number }}
+          SHA: ${{ github.sha }}
+          REFNAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman images
+
+          BASE_IMAGE="${REPO}:latest"
+          echo "Pulling base image ${BASE_IMAGE}..."
+          podman pull "$BASE_IMAGE" >/dev/null
+
+          # Try common local tags your build likely used (no push in PRs)
+          CANDIDATES=(
+            "${REPO}:pr-${PRNUM}"
+            "${REPO}:${SHA}"
+            "${REPO}:${REFNAME}"
+            "localhost/${{ github.event.repository.name }}:pr-${PRNUM}"
+            "localhost/${{ github.event.repository.name }}:${SHA}"
+            "localhost/${{ github.event.repository.name }}:${REFNAME}"
+          )
+
+          PR_IMAGE=""
+          for c in "${CANDIDATES[@]}"; do
+            if podman image exists "$c"; then
+              PR_IMAGE="$c"
+              break
+            fi
+          done
+
+          # Fallback: newest local image for this repo that is NOT :latest
+          if [[ -z "$PR_IMAGE" ]]; then
+            PR_IMAGE=$(podman images --format '{{.Repository}}:{{.Tag}} {{.Created}}' \
+              | awk -v repo="${REPO}" '$1 ~ repo && $1 !~ /:latest$/ {print $0}' \
+              | sort -rk2 | head -n1 | awk '{print $1}')
+          fi
+
+          if [[ -z "$PR_IMAGE" ]]; then
+            echo "::error::Could not resolve a local PR image tag. Ensure your build tags something like pr-<number> or <sha>."
+            exit 1
+          fi
+
+          echo "base=$BASE_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "pr=$PR_IMAGE" >> "$GITHUB_OUTPUT"
+          echo "Resolved PR image: $PR_IMAGE"
+
+      - name: Inspect images (Podman)
+        id: meta
+        env:
+          BASE_IMAGE: ${{ steps.refs.outputs.base }}
+          PR_IMAGE: ${{ steps.refs.outputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_RAW=$(podman image inspect "$BASE_IMAGE" | jq '.[0]')
+          PR_RAW=$(podman image inspect "$PR_IMAGE" | jq '.[0]')
+
+          BASE_DIGEST=$(jq -r '.Digest // empty' <<<"$BASE_RAW")
+          PR_DIGEST=$(jq -r '.Digest // empty' <<<"$PR_RAW")
+          BASE_CREATED=$(jq -r '.Created // "n/a"' <<<"$BASE_RAW")
+          PR_CREATED=$(jq -r '.Created // "n/a"' <<<"$PR_RAW")
+          BASE_SIZE=$(jq -r '.Size // 0' <<<"$BASE_RAW")
+          PR_SIZE=$(jq -r '.Size // 0' <<<"$PR_RAW")
+          BASE_LAYERS=$(jq -r '.RootFS.Layers | length' <<<"$BASE_RAW")
+          PR_LAYERS=$(jq -r '.RootFS.Layers | length' <<<"$PR_RAW")
+
+          BASE_KEYS=$(jq -r '.Labels | keys[]?' <<<"$BASE_RAW" | sort || true)
+          PR_KEYS=$(jq -r '.Labels | keys[]?' <<<"$PR_RAW" | sort || true)
+          LABELS_CHANGED=$(comm -3 <(printf "%s\n" "$BASE_KEYS") <(printf "%s\n" "$PR_KEYS") | paste -sd, -)
+          [[ -z "$LABELS_CHANGED" ]] && LABELS_CHANGED="_none_"
+
+          echo "base_image=$BASE_IMAGE" >> $GITHUB_OUTPUT
+          echo "pr_image=$PR_IMAGE" >> $GITHUB_OUTPUT
+          echo "base_digest=$BASE_DIGEST" >> $GITHUB_OUTPUT
+          echo "pr_digest=$PR_DIGEST" >> $GITHUB_OUTPUT
+          echo "base_created=$BASE_CREATED" >> $GITHUB_OUTPUT
+          echo "pr_created=$PR_CREATED" >> $GITHUB_OUTPUT
+          echo "base_size=$BASE_SIZE" >> $GITHUB_OUTPUT
+          echo "pr_size=$PR_SIZE" >> $GITHUB_OUTPUT
+          echo "base_layers=$BASE_LAYERS" >> $GITHUB_OUTPUT
+          echo "pr_layers=$PR_LAYERS" >> $GITHUB_OUTPUT
+          echo "labels_changed=$LABELS_CHANGED" >> $GITHUB_OUTPUT
+
+      # Save PR image as tar so Trivy can scan without pushing
+      - name: Save PR image as tar for Trivy
+        env:
+          PR_IMAGE: ${{ steps.meta.outputs.pr_image }}
+        run: podman save "$PR_IMAGE" -o pr-image.tar
+
+      # Trivy scans via marketplace action (base via image-ref; PR via --input)
+      - name: Trivy (base:latest)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ steps.meta.outputs.base_image }}
+          format: json
+          output: base_trivy.json
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Trivy (PR tar via --input)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          args: >
+            image --input pr-image.tar
+            --format json
+            --output pr_trivy.json
+            --ignore-unfixed
+            --severity HIGH,CRITICAL
+
+      - name: Build concise report
+        id: report
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_size=${{ steps.meta.outputs.base_size }}
+          pr_size=${{ steps.meta.outputs.pr_size }}
+          base_h=$(numfmt --to=iec --suffix=B "$base_size")
+          pr_h=$(numfmt --to=iec --suffix=B "$pr_size")
+          delta=$(( pr_size - base_size ))
+          abs=${delta#-}
+          delta_h=$(numfmt --to=iec --suffix=B "$abs")
+          if   [[ $delta -gt 0 ]]; then trend="+${delta_h}"
+          elif [[ $delta -lt 0 ]]; then trend="-${delta_h}"
+          else trend="±0"; fi
+
+          base_set=$(jq -r '[.Results[]?.Vulnerabilities[]? | .VulnerabilityID] | unique[]?' base_trivy.json | sort || true)
+          pr_set=$(jq -r   '[.Results[]?.Vulnerabilities[]? | .VulnerabilityID] | unique[]?' pr_trivy.json   | sort || true)
+          new=$(comm -13 <(printf "%s\n" "$base_set") <(printf "%s\n" "$pr_set") | sort || true)
+          fix=$(comm -23 <(printf "%s\n" "$base_set") <(printf "%s\n" "$pr_set") | sort || true)
+          new_n=$(printf "%s\n" "$new" | grep -c . || true)
+          fix_n=$(printf "%s\n" "$fix" | grep -c . || true)
+          new_top=$(printf "%s\n" "$new" | head -n 5 | paste -sd, -)
+          [[ -z "$new_top" ]] && new_top="_none_"
+
+          cat > comment.md <<EOF
+### 🧾 Image diff
+
+**Repo:** ghcr.io/${{ github.repository }}  
+**Base:** \`${{ steps.meta.outputs.base_image##*: }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})  
+**PR:** \`${{ steps.meta.outputs.pr_image##*: }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})
+
+- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}
+- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)
+- Layers: ${{ steps.meta.outputs.base_layers }} → ${{ steps.meta.outputs.pr_layers }} (**$(( ${{ steps.meta.outputs.pr_layers }} - ${{ steps.meta.outputs.base_layers }} ))**)
+- Labels changed: ${{ steps.meta.outputs.labels_changed }}
+- Trivy HIGH/CRIT: +${new_n} / -${fix_n} (new: ${new_top})
+EOF
+
+      - name: Sticky PR comment (update in-place)
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: comment.md
 
 
 
