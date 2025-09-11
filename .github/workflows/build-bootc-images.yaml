@@ -129,8 +129,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_RAW=$(podman image inspect "$BASE_IMAGE" | jq '.[0]')
-          PR_RAW=$(podman image inspect "$PR_IMAGE" | jq '.[0]')
+          BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
+          PR_RAW=$(podman image inspect "${{ env.PR_IMAGE }}" | jq '.[0]')
 
           BASE_DIGEST=$(jq -r '.Digest // empty' <<<"$BASE_RAW")
           PR_DIGEST=$(jq -r '.Digest // empty' <<<"$PR_RAW")
@@ -146,8 +146,6 @@ jobs:
           LABELS_CHANGED=$(comm -3 <(printf "%s\n" "$BASE_KEYS") <(printf "%s\n" "$PR_KEYS") | paste -sd, -)
           [[ -z "$LABELS_CHANGED" ]] && LABELS_CHANGED="_none_"
 
-          echo "base_image=$BASE_IMAGE" >> $GITHUB_OUTPUT
-          echo "pr_image=$PR_IMAGE" >> $GITHUB_OUTPUT
           echo "base_digest=$BASE_DIGEST" >> $GITHUB_OUTPUT
           echo "pr_digest=$PR_DIGEST" >> $GITHUB_OUTPUT
           echo "base_created=$BASE_CREATED" >> $GITHUB_OUTPUT
@@ -161,12 +159,12 @@ jobs:
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
         if: ${{ github.event_name == 'pull_request' }}
-        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
+        run: podman save "${{ env.PR_IMAGE }}" -o /github/workspace/pr-image.tar
 
       - name: Trivy (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          image-ref: ${{ steps.meta.outputs.base_image }}
+          image-ref: ${{ env.BASE_IMAGE }}
           format: json
           output: base_trivy.json
           ignore-unfixed: true
@@ -212,8 +210,8 @@ jobs:
             echo "### 🧾 Image diff"
             echo
             echo "**Repo:** ghcr.io/${{ github.repository }}"
-            echo "**Base:** \`${{ steps.meta.outputs.base_image }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
-            echo "**PR:** \`${{ steps.meta.outputs.pr_image }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
+            echo "**Base:** \`${{ env.BASE_IMAGE }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
+            echo "**PR:** \`${{ env.PR_IMAGE }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
             echo
             echo "- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}"
             echo "- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)"
@@ -228,6 +226,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
