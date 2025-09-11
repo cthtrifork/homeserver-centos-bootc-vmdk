@@ -38,7 +38,7 @@ log "Installing k9s"
 curl -sLo /tmp/k9s.rpm \
     "$(/ctx/build_files/github-release-url.sh derailed/k9s Linux_amd64.rpm)"
 #tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md
-sudo dnf install /tmp/k9s.rpm
+dnf install /tmp/k9s.rpm
 
 log "Installing sops"
 curl -sLo /tmp/sops \
