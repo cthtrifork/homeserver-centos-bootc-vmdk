@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Your persistent public URL is: portableinfo.a.pinggy.link
+# Your persistent TCP port is: 21412
+
 ssh -p 443 \
     -o StrictHostKeyChecking=no \
     -o ServerAliveInterval=30 \
     -R0:localhost:22 \
-    ${PINGGY_TOKEN}+tcp@portableinfo.a.pinggy.link
+    ${PINGGY_TOKEN}+tcp@eu.pro.pinggy.io
