@@ -159,7 +159,7 @@ jobs:
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
         if: ${{ github.event_name == 'pull_request' }}
-        run: podman save "${{ env.PR_IMAGE }}" -o /github/workspace/pr-image.tar
+        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
 
       - name: Trivy (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
@@ -174,7 +174,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         if: ${{ github.event_name == 'pull_request' }}
         with:
-          input: /github/workspace/pr-image.tar
+          input: pr-image.tar
           format: json
           output: pr_trivy.json
           ignore-unfixed: true
@@ -226,6 +226,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
