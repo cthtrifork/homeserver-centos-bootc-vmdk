@@ -1,5 +1,10 @@
 # proxmox-fedora-bootc
 
-Inspiration:
-
-<https://github.com/bsherman/bos/tree/main>
+```sh
+# ~/.ssh/config
+Host portableinfo.pinggy
+  HostName portableinfo.a.pinggy.link
+  User cthtrifork
+  Port 21412
+  SetEnv TERM=xterm-256color
+```
