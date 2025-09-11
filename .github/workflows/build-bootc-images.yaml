@@ -107,7 +107,7 @@ jobs:
           layers: true
           oci: false
           build-args: |
-            REGISTRY_USERNAME="cthtrifork"
+            REGISTRY_USERNAME="${{ github.repository_owner }}"
             REGISTRY_TOKEN=${{ secrets.PAT_PULL }}
             REGISTRY_URL=ghcr.io
             PINGGY_TOKEN=${{ secrets.PINGGY_TOKEN }}
@@ -303,6 +303,7 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
 
 
 
