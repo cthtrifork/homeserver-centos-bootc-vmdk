@@ -30,8 +30,8 @@ curl -sLo /tmp/flux.tar.gz \
     "$(/ctx/build_files/github-release-url.sh fluxcd/flux2 linux_amd64.tar.gz)"
 tar -zxvf /tmp/flux.tar.gz -C /usr/bin/
 
-# fluxcd
+# k9s
 log "Installing k9s"
 curl -sLo /tmp/k9s.tar.gz \
     "$(/ctx/build_files/github-release-url.sh derailed/k9s Linux_amd64.tar.gz)"
-tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/
+tar -zxvf /tmp/k9s.tar.gz -C /usr/bin/ --exclude=LICENSE --exclude=README.md
