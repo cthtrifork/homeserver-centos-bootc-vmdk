@@ -37,7 +37,7 @@ jobs:
       fail-fast: true
       matrix:
         image:
-          - IMAGE_NAME: homeserver-centos-bootc-vmdk
+          - IMAGE_NAME: homeserver-centos-bootc
             CONTEXT: ./
     continue-on-error: false
     permissions:
@@ -126,5 +126,6 @@ jobs:
       - name: Print image url
 
         run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
+
 
 
