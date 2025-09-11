@@ -27,9 +27,9 @@ env:
   #IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
   DEFAULT_TAG: "latest"
-  IMAGE_NAME: ${{ github.repository }}
-  BASE_IMAGE: ghcr.io/${{ github.repository }}/${{ github.repository }}:latest
-  PR_IMAGE: localhost/${{ github.repository }}:latest # this should work when the image has been built
+  IMAGE_NAME: homeserver-centos-bootc
+  BASE_IMAGE: ghcr.io/${{ github.repository }}/homeserver-centos-bootc:latest
+  PR_IMAGE: localhost/homeserver-centos-bootc:latest # this should work when the image has been built
   CONTEXT: ./
   
 jobs:
