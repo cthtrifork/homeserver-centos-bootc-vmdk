@@ -167,6 +167,15 @@ jobs:
             echo "</details>"
           } >> $GITHUB_STEP_SUMMARY
 
+      - name: Push to Container registry
+        if: ${{ github.event_name != 'pull_request' }}
+        id: push-to-ghcr
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          registry: ghcr.io/${{ github.repository }}
+
   run-on-main:
     runs-on: ubuntu-latest
     environment: dev
@@ -176,7 +185,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      packages: write
+      #packages: write
       id-token: write
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     steps:
@@ -235,14 +244,6 @@ jobs:
           name: trivy-sbom-report
           path: "${{ github.workspace }}/dependency-results.sbom.json"
           retention-days: 20 # 90 is the default
-
-      - name: Push to Container registry
-        id: push-to-ghcr
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ needs.build-bootc-image.outputs.image }}
-          tags: ${{ needs.build-bootc-image.outputs.tags }}
-          registry: ghcr.io/${{ github.repository }}
 
   run-on-pr:
     runs-on: ubuntu-latest
