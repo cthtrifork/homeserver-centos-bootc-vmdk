@@ -169,6 +169,13 @@ jobs:
       id-token: write
 
     steps:
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Trivy REPORT (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
         with:
