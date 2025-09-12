@@ -18,7 +18,7 @@ ARG REGISTRY_USERNAME="someuser"
 # todo move to tmpfiles.d
 RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/container-auth.json && \
     chmod 0600 /usr/lib/container-auth.json && \
-    ln -sr /usr/lib/container-auth.json /etc/ostree/auth.json 
+    ln -sr /usr/lib/container-auth.json /etc/ostree/auth.json
 
 # Install common utilities
 #RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
