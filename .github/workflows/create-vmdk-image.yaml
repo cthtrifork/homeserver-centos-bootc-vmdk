@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Clone the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Log in to the Container registry
-        uses: redhat-actions/podman-login@v1
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -38,7 +38,7 @@ jobs:
           image: ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
 
       - name: Upload VMDK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.image.IMAGE_NAME }}
 
