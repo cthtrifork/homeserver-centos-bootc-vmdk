@@ -26,6 +26,9 @@ RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/co
 RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync unzip
 # python3-pip
 
+# Configure repositories
+RUN dnf -y install 'dnf-command(config-manager)'
+
 # pip3 dependencies
 # RUN pip3 install glances
 
