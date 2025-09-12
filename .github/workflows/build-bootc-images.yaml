@@ -105,7 +105,7 @@ jobs:
           umask 077
           printf '%s' "${{ secrets.PAT_PULL }}" > /tmp/REGISTRY_TOKEN
           printf '%s' "${{ secrets.PINGGY_TOKEN }}" > /tmp/PINGGY_TOKEN
-          cat ${HOME}/.docker/config.json > /tmp/creds
+          cp ${HOME}/.docker/config.json /tmp/creds
 
       - name: Use buildah build to create the image
         id: build-image
