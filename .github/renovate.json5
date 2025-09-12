@@ -8,10 +8,12 @@
   "packageRules": [
     {
       "automerge": true,
+      "pinDigests": false,
       "matchUpdateTypes": ["major", "minor", "patch"]
     },
     {
         automerge: true,
+        "pinDigests": false,
         matchManagers: [
           'github-actions',
         ],
