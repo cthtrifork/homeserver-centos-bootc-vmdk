@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM scratch AS ctx
 COPY / /
 
@@ -14,9 +15,12 @@ ARG REGISTRY_TOKEN="notset"
 ARG REGISTRY_URL="notset"
 ARG REGISTRY_USERNAME="someuser"
 RUN ln -s /run/user/0/containers/auth.json /etc/ostree/auth.json
-RUN echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
-
-ARG PINGGY_TOKEN="notset"
+RUN --mount=type=secret,id=registry_token \
+    REGISTRY_TOKEN="$(cat /run/secrets/registry_token)" && \
+    printf '%s' "$REGISTRY_TOKEN" | podman login \
+      --authfile /etc/ostree/auth.json \
+      -u "$REGISTRY_USERNAME" \
+      --password-stdin "$REGISTRY_URL"
 
 # Install common utilities
 #RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
@@ -33,6 +37,7 @@ RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
     #--mount=type=cache,dst=/var/cache \
     #--mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
+    --mount=type=secret,id=pinggy_token PINGGY_TOKEN="$(cat /run/secrets/pinggy_token)" \
     /ctx/build_files/build.sh
 
 # Networking
@@ -40,7 +45,3 @@ RUN --mount=type=bind,from=ctx,src=/,dst=/ctx \
 #RUN firewall-offline-cmd --add-port 8006/tcp
 
 RUN bootc container lint
-
-
-
-

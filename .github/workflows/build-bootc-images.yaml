@@ -99,6 +99,13 @@ jobs:
           sep-tags: " "
           sep-annotations: " "
 
+      # Write secrets to temp files for --secret src=
+      - name: Prepare build secrets
+        run: |
+          umask 077
+          printf '%s' "${{ secrets.PAT_PULL }}" > /tmp/REGISTRY_TOKEN
+          printf '%s' "${{ secrets.PINGGY_TOKEN }}" > /tmp/PINGGY_TOKEN
+
       - name: Use buildah build to create the image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -111,11 +118,12 @@ jobs:
           oci: false
           build-args: |
             REGISTRY_USERNAME="${{ github.repository_owner }}"
-            REGISTRY_TOKEN=${{ secrets.PAT_PULL }}
             REGISTRY_URL=ghcr.io
-            PINGGY_TOKEN=${{ secrets.PINGGY_TOKEN }}
           containerfiles: |
             ${{ env.CONTEXT }}/Containerfile
+          extra-args: |
+            --secret id=registry_token,src=/tmp/REGISTRY_TOKEN
+            --secret id=pinggy_token,src=/tmp/PINGGY_TOKEN
 
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
