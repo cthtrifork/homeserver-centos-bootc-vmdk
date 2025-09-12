@@ -170,6 +170,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     steps:
       - name: Log in to the Container registry
         uses: redhat-actions/podman-login@v1
