@@ -220,13 +220,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pr-image
-          path: "${{ github.workspace }}/pr-image.tar"
+          path: "${{ github.workspace }}"
 
       - name: Download base_trivy.json
         uses: actions/download-artifact@v4
         with:
           name: base_trivy.json
-          path: "${{ github.workspace }}/base_trivy.json"
+          path: "${{ github.workspace }}"
 
       - name: Inspect images (Podman)
         id: meta
