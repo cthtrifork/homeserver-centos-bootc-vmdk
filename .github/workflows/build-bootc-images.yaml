@@ -57,6 +57,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          auth_file_path: /etc/ostree/auth.json
 
       - name: Load image
         shell: bash
@@ -105,7 +106,6 @@ jobs:
           umask 077
           printf '%s' "${{ secrets.PAT_PULL }}" > /tmp/REGISTRY_TOKEN
           printf '%s' "${{ secrets.PINGGY_TOKEN }}" > /tmp/PINGGY_TOKEN
-          echo $REGISTRY_TOKEN | podman login --authfile /etc/ostree/auth.json -u $REGISTRY_USERNAME --password-stdin $REGISTRY_URL
 
       - name: Use buildah build to create the image
         id: build-image
