@@ -146,6 +146,7 @@ jobs:
           output: base_trivy.json
           ignore-unfixed: true
           #severity: HIGH,CRITICAL
+          scanners: "vuln"
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -218,6 +219,7 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           skip-setup-trivy: true
+          scanners: "vuln"
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -340,6 +342,7 @@ jobs:
           ignore-unfixed: true
           #severity: HIGH,CRITICAL
           skip-setup-trivy: true
+          scanners: "vuln"
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -411,6 +414,7 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           skip-setup-trivy: true
+          scanners: "vuln"
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -423,3 +427,4 @@ jobs:
           sarif_file: "${{ github.workspace }}/trivy-results.sarif"
 
           category: trivy
+
