@@ -17,6 +17,7 @@ on:
       - README.md
       - .editorconfig
       - .gitignore
+      - ./github/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
@@ -420,4 +421,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           sarif_file: "${{ github.workspace }}/trivy-results.sarif"
+
           category: trivy
