@@ -1,16 +1,16 @@
 name: Build bootable container image
 on:
   schedule:
-    - cron: '0 3 * * 0' # Runs at 03:00, only on Sunday for security patching
+    - cron: "0 3 * * 0" # Runs at 03:00, only on Sunday for security patching
   workflow_dispatch:
   pull_request:
-    branches: 
+    branches:
       - main
   push:
-#    paths:
-#      - "Containerfile"
-#      - "config.toml"
-#      - ".github/workflows/build-bootc-images.yaml"
+    #    paths:
+    #      - "Containerfile"
+    #      - "config.toml"
+    #      - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
     paths-ignore:
@@ -27,19 +27,21 @@ env:
   #IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
   DEFAULT_TAG: "latest"
+  IMAGE_NAME: homeserver-centos-bootc
+  BASE_IMAGE: ghcr.io/${{ github.repository }}/homeserver-centos-bootc:latest
+  PR_IMAGE: localhost/homeserver-centos-bootc:latest # this should work when the image has been built
+  CONTEXT: ./
 
 jobs:
   build-bootc-image:
     name: Build bootable container image
     runs-on: ubuntu-latest
     environment: dev
-    strategy:
-      fail-fast: true
-      matrix:
-        image:
-          - IMAGE_NAME: homeserver-centos-bootc
-            CONTEXT: ./
     continue-on-error: false
+    timeout-minutes: 10
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+      tags: ${{ steps.build-image.outputs.tags }}
     permissions:
       contents: read
       packages: write
@@ -59,14 +61,15 @@ jobs:
       - name: Load image
         shell: bash
         run: |
-          podman pull ghcr.io/${{ github.repository }}/${{ matrix.image.IMAGE_NAME }}:latest
+          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          systemctl --user enable --now podman.socket # for trivy
+          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
 
       - name: Get current date
         id: date
         run: |
-          # This generates a timestamp like what is defined on the ArtifactHub documentation
-          # E.G: 2022-02-08T15:38:15Z'
-          # https://artifacthub.io/docs/topics/repositories/container-images/
+          # This generates a timestamp like
+          # 2022-02-08T15:38:15Z
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
@@ -86,10 +89,10 @@ jobs:
           labels: |
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}/refs/heads/main/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}/blob/main/Containerfile
-            org.opencontainers.image.title=${{ matrix.image.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ matrix.image.IMAGE_NAME }}
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/main/Containerfile
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             containers.bootc=1
@@ -100,34 +103,251 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          context: ${{ matrix.image.CONTEXT }}
-          image: ${{ matrix.image.IMAGE_NAME }}
+          context: ${{ env.CONTEXT }}
+          image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           layers: true
           oci: false
           build-args: |
-            REGISTRY_USERNAME="cthtrifork"
+            REGISTRY_USERNAME="${{ github.repository_owner }}"
             REGISTRY_TOKEN=${{ secrets.PAT_PULL }}
             REGISTRY_URL=ghcr.io
             PINGGY_TOKEN=${{ secrets.PINGGY_TOKEN }}
           containerfiles: |
-            ${{ matrix.image.CONTEXT }}/Containerfile
+            ${{ env.CONTEXT }}/Containerfile
 
-      - name: Push to Container registry
-        id: push-to-ghcr
-        uses: redhat-actions/push-to-registry@v2
-        if: ${{ github.event_name != 'pull_request' }}
+      # Save PR image as tar so Trivy can scan without pushing
+      - name: Save PR image as tar for Trivy
+        if: ${{ github.event_name == 'pull_request' }}
+        run: podman save "${{ env.PR_IMAGE }}" | gzip > pr-image.tar.gz
+
+      - name: Upload PR image as a Github artifact
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
         with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: ghcr.io/${{ github.repository }}
+          name: pr-image
+          path: "${{ github.workspace }}/pr-image.tar.gz"
 
-      - name: Print image url
+      - name: Trivy (base:latest)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          format: json
+          output: base_trivy.json
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
 
-        run: echo "Image pushed to ${{ steps.push-to-ghcr.outputs.registry-paths }}"
+      - name: Upload trivy json report as a Github artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: base_trivy.json
+          path: "${{ github.workspace }}/base_trivy.json"
 
+      - name: Publish Trivy Output to Summary
+        run: | #sh
+          {
+            echo "### Security Output"
+            echo "<details><summary>Click to expand</summary>"
+            echo ""
+            echo '```json'
+            cat base_trivy.json
+            echo '```'
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY
 
+  run-on-main:
+    runs-on: ubuntu-latest
+    environment: dev
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: build-bootc-image
+    continue-on-error: false
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
+    steps:
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Trivy REPORT (base:latest)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          format: "sarif"
+          output: "trivy-results.sarif"
 
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sarif_file: "trivy-results.sarif"
+          category: trivy
+
+      - name: Trivy SBOM (base:latest)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          scan-type: image
+          format: "github"
+          output: "dependency-results.sbom.json"
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+          severity: "MEDIUM,HIGH,CRITICAL"
+          scanners: "vuln"
+
+      - name: Upload trivy report as a Github artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sbom-report
+          path: "${{ github.workspace }}/dependency-results.sbom.json"
+          retention-days: 20 # 90 is the default
+
+  run-on-pr:
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: build-bootc-image
+    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: false
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Download PR image
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-image
+          path: "${{ github.workspace }}"
+
+      - name: Download base_trivy.json
+        uses: actions/download-artifact@v4
+        with:
+          name: base_trivy.json
+          path: "${{ github.workspace }}"
+
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load latest image
+        shell: bash
+        run: | #sh
+          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          systemctl --user enable --now podman.socket # for trivy
+          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+
+      - name: Inspect images (Podman)
+        id: meta
+        shell: bash
+        run: | #sh
+          set -euo pipefail
+          podman load -q -i ${{ github.workspace }}/pr-image.tar.gz
+          podman images
+
+          BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
+          PR_RAW=$(podman image inspect "${{ env.PR_IMAGE }}" | jq '.[0]')
+
+          BASE_DIGEST=$(jq -r '.Digest // empty' <<<"$BASE_RAW")
+          PR_DIGEST=$(jq -r '.Digest // empty' <<<"$PR_RAW")
+          BASE_CREATED=$(jq -r '.Created // "n/a"' <<<"$BASE_RAW")
+          PR_CREATED=$(jq -r '.Created // "n/a"' <<<"$PR_RAW")
+          BASE_SIZE=$(jq -r '.Size // 0' <<<"$BASE_RAW")
+          PR_SIZE=$(jq -r '.Size // 0' <<<"$PR_RAW")
+          BASE_LAYERS=$(jq -r '.RootFS.Layers | length' <<<"$BASE_RAW")
+          PR_LAYERS=$(jq -r '.RootFS.Layers | length' <<<"$PR_RAW")
+
+          BASE_KEYS=$(jq -r '.Labels | keys[]?' <<<"$BASE_RAW" | sort || true)
+          PR_KEYS=$(jq -r '.Labels | keys[]?' <<<"$PR_RAW" | sort || true)
+          LABELS_CHANGED=$(comm -3 <(printf "%s\n" "$BASE_KEYS") <(printf "%s\n" "$PR_KEYS") | paste -sd, -)
+          [[ -z "$LABELS_CHANGED" ]] && LABELS_CHANGED="_none_"
+
+          echo "base_digest=$BASE_DIGEST" >> $GITHUB_OUTPUT
+          echo "pr_digest=$PR_DIGEST" >> $GITHUB_OUTPUT
+          echo "base_created=$BASE_CREATED" >> $GITHUB_OUTPUT
+          echo "pr_created=$PR_CREATED" >> $GITHUB_OUTPUT
+          echo "base_size=$BASE_SIZE" >> $GITHUB_OUTPUT
+          echo "pr_size=$PR_SIZE" >> $GITHUB_OUTPUT
+          echo "base_layers=$BASE_LAYERS" >> $GITHUB_OUTPUT
+          echo "pr_layers=$PR_LAYERS" >> $GITHUB_OUTPUT
+          echo "labels_changed=$LABELS_CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Trivy (PR)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          input: pr-image.tar.gz
+          format: json
+          output: pr_trivy.json
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Publish Trivy Output to Summary
+        run: | #sh
+          {
+            echo "### Security Output"
+            echo "<details><summary>Click to expand</summary>"
+            echo ""
+            echo '```json'
+            cat pr_trivy.json
+            echo '```'
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Build report
+        id: report
+        shell: bash
+        run: | #sh
+          set -euo pipefail
+          base_size=${{ steps.meta.outputs.base_size }}
+          pr_size=${{ steps.meta.outputs.pr_size }}
+          base_h=$(numfmt --to=iec --suffix=B "$base_size")
+          pr_h=$(numfmt --to=iec --suffix=B "$pr_size")
+          delta=$(( pr_size - base_size ))
+          abs=${delta#-}
+          delta_h=$(numfmt --to=iec --suffix=B "$abs")
+          if   [[ $delta -gt 0 ]]; then trend="+${delta_h}"
+          elif [[ $delta -lt 0 ]]; then trend="-${delta_h}"
+          else trend="±0"; fi
+
+          base_set=$(jq -r '[.Results[]?.Vulnerabilities[]? | .VulnerabilityID] | unique[]?' base_trivy.json | sort || true)
+          pr_set=$(jq -r   '[.Results[]?.Vulnerabilities[]? | .VulnerabilityID] | unique[]?' pr_trivy.json   | sort || true)
+          new=$(comm -13 <(printf "%s\n" "$base_set") <(printf "%s\n" "$pr_set") | sort || true)
+          fix=$(comm -23 <(printf "%s\n" "$base_set") <(printf "%s\n" "$pr_set") | sort || true)
+          new_n=$(printf "%s\n" "$new" | grep -c . || true)
+          fix_n=$(printf "%s\n" "$fix" | grep -c . || true)
+          new_top=$(printf "%s\n" "$new" | head -n 5 | paste -sd, -)
+          [[ -z "$new_top" ]] && new_top="_none_"
+
+          {
+            echo "### 🧾 Image diff"
+            echo
+            echo "**Repo:** ghcr.io/${{ github.repository }}"
+            echo "**Base:** \`${{ env.BASE_IMAGE }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
+            echo "**PR:** \`${{ env.PR_IMAGE }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
+            #echo "- Trivy CVEs: ${pr_set}"
+            echo
+            echo "- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}"
+            echo "- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)"
+            echo "- Layers: ${{ steps.meta.outputs.base_layers }} → ${{ steps.meta.outputs.pr_layers }}" # (**${layer_delta}**)
+            echo "- Labels changed: ${{ steps.meta.outputs.labels_changed }}"
+            echo "- Trivy HIGH/CRIT: +${new_n} / -${fix_n} (new: ${new_top})"
+          } > comment.md
+
+      - name: Sticky PR comment (update in-place)
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: comment.md
+          skip_unchanged: true
