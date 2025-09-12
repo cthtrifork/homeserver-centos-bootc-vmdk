@@ -4,6 +4,9 @@
     "config:best-practices",
     ":disableDigestUpdates"
   ],
+  "digest": {
+    "enabled": false
+  },
   "rebaseWhen": "auto",
   "packageRules": [
     {
