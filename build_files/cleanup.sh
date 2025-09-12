@@ -10,6 +10,19 @@ log() {
 
 log "Starting system cleanup"
 
+dnf remove tracker \
+  tracker-miners \
+  mariadb-server-utils \
+  abrt \
+  at \
+  dnf-data
+  # Deprecated services.
+  iptables-services \
+  iptables-utils \
+  #Packages that are resource-heavy, or bring unnecessary services.
+  rsyslog \
+  dracut-config-rescue
+
 # Clean package manager cache
 dnf -y autoremove
 dnf clean all
