@@ -2,7 +2,7 @@
 FROM scratch AS ctx
 COPY / /
 
-FROM quay.io/centos-bootc/centos-bootc:stream9
+FROM quay.io/centos-bootc/centos-bootc:stream9@sha256:1a9e530165f856fed20f50ea13e1f38ad347517ff9583a6c6fecb042ddb17455
 
 #setup sudo to not require password
 RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-sudo
