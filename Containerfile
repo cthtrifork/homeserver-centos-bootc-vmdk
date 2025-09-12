@@ -23,7 +23,7 @@ RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/co
 
 # Install common utilities
 #RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
-RUN dnf -y install dnf5-plugins procps-ng curl file qemu-guest-agent git firewalld rsync unzip
+RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync unzip
 # python3-pip
 
 # pip3 dependencies
