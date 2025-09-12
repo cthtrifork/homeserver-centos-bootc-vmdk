@@ -46,7 +46,6 @@ jobs:
       contents: read
       packages: write
       id-token: write
-      pull-requests: write
 
     steps:
       - name: Clone the repository
@@ -164,6 +163,11 @@ jobs:
     needs: build-bootc-image
     continue-on-error: false
     timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
     steps:
       - name: Trivy REPORT (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
@@ -207,6 +211,10 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     continue-on-error: false
     timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
     steps:
       - name: Download PR image
         uses: actions/download-artifact@v4
@@ -225,7 +233,7 @@ jobs:
         shell: bash
         run: | #sh
           set -euo pipefail
-          podman load ${{ github.workspace }}/pr-image.tar
+          podman load -q -i ${{ github.workspace }}/pr-image.tar
           podman images
 
           BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
