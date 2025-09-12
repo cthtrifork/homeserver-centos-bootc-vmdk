@@ -228,6 +228,20 @@ jobs:
           name: base_trivy.json
           path: "${{ github.workspace }}"
 
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load latest image
+        shell: bash
+        run: | #sh
+          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          systemctl --user enable --now podman.socket # for trivy
+          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+
       - name: Inspect images (Podman)
         id: meta
         shell: bash
