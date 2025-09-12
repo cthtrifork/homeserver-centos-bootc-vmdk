@@ -215,7 +215,7 @@ jobs:
           category: trivy
 
       - name: Trivy SBOM (base:latest)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           scan-type: image
@@ -235,6 +235,14 @@ jobs:
           name: trivy-sbom-report
           path: "${{ github.workspace }}/dependency-results.sbom.json"
           retention-days: 20 # 90 is the default
+
+      - name: Push to Container registry
+        id: push-to-ghcr
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ needs.build-bootc-image.outputs.image }}
+          tags: ${{ needs.build-bootc-image.outputs.tags }}
+          registry: ghcr.io/${{ github.repository }}
 
   run-on-pr:
     runs-on: ubuntu-latest
