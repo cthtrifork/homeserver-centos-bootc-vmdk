@@ -127,7 +127,7 @@ jobs:
         id: meta
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
-        run: |
+        run: | # sh
           set -euo pipefail
           BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
           PR_RAW=$(podman image inspect "${{ env.PR_IMAGE }}" | jq '.[0]')
@@ -195,7 +195,9 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: ${{ always() }}
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           sarif_file: 'trivy-results.sarif'
+          category: trivy
 
       - name: Trivy SBOM (base:latest)
         uses: aquasecurity/trivy-action@0.28.0
