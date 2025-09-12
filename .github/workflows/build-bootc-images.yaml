@@ -17,6 +17,7 @@ on:
       - README.md
       - .editorconfig
       - .gitignore
+      - ./github/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
@@ -144,7 +145,7 @@ jobs:
           format: json
           output: base_trivy.json
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -213,7 +214,7 @@ jobs:
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
           format: "sarif"
           output: "trivy-results.sarif"
           skip-setup-trivy: true
@@ -337,7 +338,7 @@ jobs:
           format: json
           output: pr_trivy.json
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
           skip-setup-trivy: true
         env:
           TRIVY_SKIP_DB_UPDATE: true
@@ -420,4 +421,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           sarif_file: "${{ github.workspace }}/trivy-results.sarif"
+
           category: trivy
