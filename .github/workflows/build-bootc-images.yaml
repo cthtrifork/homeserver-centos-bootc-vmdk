@@ -1,16 +1,16 @@
 name: Build bootable container image
 on:
   schedule:
-    - cron: '0 3 * * 0' # Runs at 03:00, only on Sunday for security patching
+    - cron: "0 3 * * 0" # Runs at 03:00, only on Sunday for security patching
   workflow_dispatch:
   pull_request:
-    branches: 
+    branches:
       - main
   push:
-#    paths:
-#      - "Containerfile"
-#      - "config.toml"
-#      - ".github/workflows/build-bootc-images.yaml"
+    #    paths:
+    #      - "Containerfile"
+    #      - "config.toml"
+    #      - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
     paths-ignore:
@@ -31,7 +31,7 @@ env:
   BASE_IMAGE: ghcr.io/${{ github.repository }}/homeserver-centos-bootc:latest
   PR_IMAGE: localhost/homeserver-centos-bootc:latest # this should work when the image has been built
   CONTEXT: ./
-  
+
 jobs:
   build-bootc-image:
     name: Build bootable container image
@@ -39,12 +39,15 @@ jobs:
     environment: dev
     continue-on-error: false
     timeout-minutes: 10
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+      tags: ${{ steps.build-image.outputs.tags }}
     permissions:
       contents: read
       packages: write
       id-token: write
       pull-requests: write
-  
+
     steps:
       - name: Clone the repository
         uses: actions/checkout@v5
@@ -115,20 +118,112 @@ jobs:
           containerfiles: |
             ${{ env.CONTEXT }}/Containerfile
 
-      - name: Push to Container registry
-        id: push-to-ghcr
-        uses: redhat-actions/push-to-registry@v2
-        if: ${{ github.event_name != 'pull_request' }}
+      # Save PR image as tar so Trivy can scan without pushing
+      - name: Save PR image as tar for Trivy
+        if: ${{ github.event_name == 'pull_request' }}
+        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
+
+      - name: Upload PR image as a Github artifact
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
         with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: ghcr.io/${{ github.repository }}
+          name: pr-image
+          path: "${{ github.workspace }}/pr-image.tar"
+
+      - name: Trivy (base:latest)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          format: json
+          output: base_trivy.json
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Upload trivy json report as a Github artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: base_trivy.json
+          path: "${{ github.workspace }}/base_trivy.json"
+
+      - name: Publish Trivy Output to Summary
+        run: | #sh
+          {
+            echo "### Security Output"
+            echo "<details><summary>Click to expand</summary>"
+            echo ""
+            echo '```json'
+            cat base_trivy.json
+            echo '```'
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY
+
+  run-on-main:
+    runs-on: ubuntu-latest
+    environment: dev
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: build-bootc-image
+    continue-on-error: false
+    timeout-minutes: 10
+    steps:
+      - name: Trivy REPORT (base:latest)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sarif_file: "trivy-results.sarif"
+          category: trivy
+
+      - name: Trivy SBOM (base:latest)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.BASE_IMAGE }}
+          scan-type: image
+          format: "github"
+          output: "dependency-results.sbom.json"
+          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
+          severity: "MEDIUM,HIGH,CRITICAL"
+          scanners: "vuln"
+
+      - name: Upload trivy report as a Github artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sbom-report
+          path: "${{ github.workspace }}/dependency-results.sbom.json"
+          retention-days: 20 # 90 is the default
+
+  run-on-pr:
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: build-bootc-image
+    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: false
+    timeout-minutes: 10
+    steps:
+      - name: Download PR image
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-image
+          path: "${{ github.workspace }}/pr-image.tar"
+
+      - name: Download base_trivy.json
+        uses: actions/download-artifact@v4
+        with:
+          name: base_trivy.json
+          path: "${{ github.workspace }}/base_trivy.json"
 
       - name: Inspect images (Podman)
         id: meta
-        if: ${{ github.event_name == 'pull_request' }}
         shell: bash
-        run: | # sh
+        run: | #sh
           set -euo pipefail
           BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
           PR_RAW=$(podman image inspect "${{ env.PR_IMAGE }}" | jq '.[0]')
@@ -157,74 +252,8 @@ jobs:
           echo "pr_layers=$PR_LAYERS" >> $GITHUB_OUTPUT
           echo "labels_changed=$LABELS_CHANGED" >> $GITHUB_OUTPUT
 
-      # Save PR image as tar so Trivy can scan without pushing
-      - name: Save PR image as tar for Trivy
-        if: ${{ github.event_name == 'pull_request' }}
-        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
-
-      - name: Trivy (base:latest)
-        uses: aquasecurity/trivy-action@0.33.1
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          image-ref: ${{ env.BASE_IMAGE }}
-          format: json
-          output: base_trivy.json
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-
-      - name: Trivy REPORT (base:latest)
-        uses: aquasecurity/trivy-action@0.33.1
-        if: ${{ github.event_name != 'pull_request' }}
-        with:
-          image-ref: ${{ env.BASE_IMAGE }}
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Trivy REPORT (PR)
-        uses: aquasecurity/trivy-action@0.33.1
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          input: pr-image.tar
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        #if: ${{ always() }}
-        #if: (success() || failure()) && (github.event_name == 'pull_request' || github.event_name == 'push')
-        if: (success() || failure()) && (github.event_name == 'push')
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          sarif_file: 'trivy-results.sarif'
-          category: trivy
-
-      - name: Trivy SBOM (base:latest)
-        uses: aquasecurity/trivy-action@0.28.0
-        if: ${{ github.event_name != 'pull_request' }}
-        with:
-          image-ref: ${{ env.BASE_IMAGE }}
-          scan-type: image
-          format: 'github'
-          output: 'dependency-results.sbom.json'
-          github-pat: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.github_pat_name }} if you're using a PAT
-          severity: "MEDIUM,HIGH,CRITICAL"
-          scanners: "vuln"
-
-      - name: Upload trivy report as a Github artifact
-        if: ${{ github.event_name != 'pull_request' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-sbom-report
-          path: '${{ github.workspace }}/dependency-results.sbom.json'
-          retention-days: 20 # 90 is the default
-
       - name: Trivy (PR)
         uses: aquasecurity/trivy-action@0.33.1
-        if: ${{ github.event_name == 'pull_request' }}
         with:
           input: pr-image.tar
           format: json
@@ -233,40 +262,21 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Publish Trivy Output to Summary
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [[ -s pr_trivy.json ]]; then
-            {
-              echo "### Security Output"
-              echo "<details><summary>Click to expand</summary>"
-              echo ""
-              echo '```json'
-              cat pr_trivy.json
-              echo '```'
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Publish Trivy Output to Summary
-        if: ${{ github.event_name != 'pull_request' }}
-        run: |
-          if [[ -s base_trivy.json ]]; then
-            {
-              echo "### Security Output"
-              echo "<details><summary>Click to expand</summary>"
-              echo ""
-              echo '```json'
-              cat base_trivy.json
-              echo '```'
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
-          fi
+        run: | #sh
+          {
+            echo "### Security Output"
+            echo "<details><summary>Click to expand</summary>"
+            echo ""
+            echo '```json'
+            cat pr_trivy.json
+            echo '```'
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: Build report
-        if: ${{ github.event_name == 'pull_request' }}
         id: report
         shell: bash
-        run: |
+        run: | #sh
           set -euo pipefail
           base_size=${{ steps.meta.outputs.base_size }}
           pr_size=${{ steps.meta.outputs.pr_size }}
@@ -294,6 +304,7 @@ jobs:
             echo "**Repo:** ghcr.io/${{ github.repository }}"
             echo "**Base:** \`${{ env.BASE_IMAGE }}\` (digest: ${{ steps.meta.outputs.base_digest || 'n/a' }})"
             echo "**PR:** \`${{ env.PR_IMAGE }}\` (digest: ${{ steps.meta.outputs.pr_digest || 'n/a' }})"
+            echo "- Trivy HIGH/CRIT: ${pr_set}"
             echo
             echo "- Created: ${{ steps.meta.outputs.base_created }} → ${{ steps.meta.outputs.pr_created }}"
             echo "- Size (compressed): ${base_h} → ${pr_h} (**${trend}**)"
@@ -304,28 +315,6 @@ jobs:
 
       - name: Sticky PR comment (update in-place)
         uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ github.event_name == 'pull_request' }}
         with:
           path: comment.md
           skip_unchanged: true
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
