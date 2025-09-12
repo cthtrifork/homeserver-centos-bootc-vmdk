@@ -225,6 +225,9 @@ jobs:
         shell: bash
         run: | #sh
           set -euo pipefail
+          podman load ${{ github.workspace }}/pr-image.tar
+          podman images
+
           BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
           PR_RAW=$(podman image inspect "${{ env.PR_IMAGE }}" | jq '.[0]')
 
