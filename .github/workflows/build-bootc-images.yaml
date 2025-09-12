@@ -37,7 +37,6 @@ jobs:
   build-bootc-image:
     name: Build bootable container image
     runs-on: ubuntu-latest
-    environment: dev
     continue-on-error: false
     timeout-minutes: 10
     outputs:
@@ -180,7 +179,6 @@ jobs:
 
   run-on-main:
     runs-on: ubuntu-latest
-    environment: dev
     if: ${{ github.event_name != 'pull_request' }}
     needs: build-bootc-image
     continue-on-error: false
@@ -256,7 +254,6 @@ jobs:
 
   run-on-pr:
     runs-on: ubuntu-latest
-    environment: dev
     needs: build-bootc-image
     if: ${{ github.event_name == 'pull_request' }}
     continue-on-error: false
@@ -425,6 +422,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           sarif_file: "${{ github.workspace }}/trivy-results.sarif"
-
           category: trivy
 
