@@ -57,7 +57,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          auth_file_path: ./auth/auth.json
 
       - name: Load image
         shell: bash
@@ -125,7 +124,7 @@ jobs:
           extra-args: |
             --secret id=registry_token,src=/tmp/REGISTRY_TOKEN
             --secret id=pinggy_token,src=/tmp/PINGGY_TOKEN
-            --secret id=creds,src=./auth/auth.json
+            --secret id=creds,src=$HOME/.docker/config.json
 
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
