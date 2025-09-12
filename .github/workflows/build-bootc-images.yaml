@@ -120,14 +120,14 @@ jobs:
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
         if: ${{ github.event_name == 'pull_request' }}
-        run: podman save "${{ env.PR_IMAGE }}" -o pr-image.tar
+        run: podman save "${{ env.PR_IMAGE }}" -o | gzip -9 > pr-image.tar.gz
 
       - name: Upload PR image as a Github artifact
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: pr-image
-          path: "${{ github.workspace }}/pr-image.tar"
+          path: "${{ github.workspace }}/pr-image.tar.gz"
 
       - name: Trivy (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
@@ -255,7 +255,7 @@ jobs:
         shell: bash
         run: | #sh
           set -euo pipefail
-          podman load -q -i ${{ github.workspace }}/pr-image.tar
+          podman load -q -i ${{ github.workspace }}/pr-image.tar.gz
           podman images
 
           BASE_RAW=$(podman image inspect "${{ env.BASE_IMAGE }}" | jq '.[0]')
@@ -288,7 +288,7 @@ jobs:
       - name: Trivy (PR)
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          input: pr-image.tar
+          input: pr-image.tar.gz
           format: json
           output: pr_trivy.json
           ignore-unfixed: true
