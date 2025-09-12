@@ -204,10 +204,9 @@ jobs:
           export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
 
       - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.0
+        uses: aquasecurity/setup-trivy@v0.2.4
         with:
           cache: true
-          version: v0.65.0
 
       - name: Trivy REPORT (base:latest)
         uses: aquasecurity/trivy-action@0.33.1
@@ -265,6 +264,11 @@ jobs:
       id-token: write
       pull-requests: write
     steps:
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          cache: true
+
       - name: Download PR image
         uses: actions/download-artifact@v4
         with:
@@ -334,6 +338,7 @@ jobs:
           output: pr_trivy.json
           ignore-unfixed: true
           severity: HIGH,CRITICAL
+          skip-setup-trivy: true
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -395,3 +400,24 @@ jobs:
         with:
           path: comment.md
           skip_unchanged: true
+
+      - name: Trivy REPORT (PR)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          input: pr-image.tar.gz
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          format: "sarif"
+          output: "trivy-results.sarif"
+          skip-setup-trivy: true
+        env:
+          TRIVY_SKIP_DB_UPDATE: true
+          TRIVY_SKIP_JAVA_DB_UPDATE: true
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sarif_file: "${{ github.workspace }}/trivy-results.sarif"
+          category: trivy
