@@ -3,17 +3,15 @@
   "extends": [
     "config:best-practices",
   ],
-
   "rebaseWhen": "never",
-
   "packageRules": [
     {
       "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      "matchUpdateTypes": ["pin"]
     },
     {
       "enabled": false,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
+      "matchUpdateTypes": ["digest", "pin"],
       "matchDepTypes": ["container"],
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
     },
