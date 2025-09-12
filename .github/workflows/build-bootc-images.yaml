@@ -120,7 +120,7 @@ jobs:
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
         if: ${{ github.event_name == 'pull_request' }}
-        run: podman save "${{ env.PR_IMAGE }}" | gzip -9 > pr-image.tar.gz
+        run: podman save "${{ env.PR_IMAGE }}" | gzip > pr-image.tar.gz
 
       - name: Upload PR image as a Github artifact
         if: ${{ github.event_name == 'pull_request' }}
