@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     continue-on-error: false
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
