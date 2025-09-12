@@ -23,6 +23,7 @@ RUN --mount=type=secret,id=registry_token \
       --password-stdin "$REGISTRY_URL"
 
 # Install common utilities
+RUN dnf update -y
 #RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
 RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync unzip
 # python3-pip
