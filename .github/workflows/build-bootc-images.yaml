@@ -196,7 +196,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load image
+      - name: Enable podman pull
         shell: bash
         run: |
           #podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
