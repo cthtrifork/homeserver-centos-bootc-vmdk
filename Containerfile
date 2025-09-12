@@ -24,11 +24,11 @@ RUN --mount=type=secret,id=registry_token \
 
 # Install common utilities
 #RUN dnf -y group install 'Development Tools' # this one is huge and includes java!
-RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync unzip
+RUN dnf5 -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git firewalld rsync unzip
 # python3-pip
 
 # Configure repositories
-RUN dnf -y install 'dnf-command(config-manager)'
+RUN dnf5 -y install 'dnf-command(config-manager)'
 
 # pip3 dependencies
 # RUN pip3 install glances
