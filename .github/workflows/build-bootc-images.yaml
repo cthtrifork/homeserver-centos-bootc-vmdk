@@ -105,6 +105,7 @@ jobs:
           umask 077
           printf '%s' "${{ secrets.PAT_PULL }}" > /tmp/REGISTRY_TOKEN
           printf '%s' "${{ secrets.PINGGY_TOKEN }}" > /tmp/PINGGY_TOKEN
+          ${HOME}/.docker/config.json > /tmp/creds
 
       - name: Use buildah build to create the image
         id: build-image
@@ -124,7 +125,7 @@ jobs:
           extra-args: |
             --secret id=registry_token,src=/tmp/REGISTRY_TOKEN
             --secret id=pinggy_token,src=/tmp/PINGGY_TOKEN
-            --secret id=creds,src=$(${HOME})/.docker/config.json
+            --secret id=creds,src=/tmp/creds
 
       # Save PR image as tar so Trivy can scan without pushing
       - name: Save PR image as tar for Trivy
