@@ -8,6 +8,13 @@
     {
       "automerge": true,
       "matchUpdateTypes": ["major", "minor", "patch"]
-    }
+    },
+    {
+        automerge: true,
+        matchManagers: [
+          'github-actions',
+        ],
+        matchUpdateTypes: ["major", "minor", "patch"]
+    },
   ]
 }
