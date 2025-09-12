@@ -144,7 +144,7 @@ jobs:
           format: json
           output: base_trivy.json
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
@@ -213,7 +213,7 @@ jobs:
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
           format: "sarif"
           output: "trivy-results.sarif"
           skip-setup-trivy: true
@@ -337,7 +337,7 @@ jobs:
           format: json
           output: pr_trivy.json
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          #severity: HIGH,CRITICAL
           skip-setup-trivy: true
         env:
           TRIVY_SKIP_DB_UPDATE: true
@@ -409,7 +409,7 @@ jobs:
           severity: HIGH,CRITICAL
           format: "sarif"
           output: "trivy-results.sarif"
-          skip-setup-trivy: true
+          #skip-setup-trivy: true
         env:
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
