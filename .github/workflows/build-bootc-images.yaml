@@ -220,6 +220,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      packages: read
       id-token: write
       pull-requests: write
     steps:
