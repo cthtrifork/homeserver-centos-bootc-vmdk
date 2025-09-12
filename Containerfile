@@ -15,7 +15,6 @@ ARG REGISTRY_TOKEN="notset"
 ARG REGISTRY_URL="notset"
 ARG REGISTRY_USERNAME="someuser"
 
-# todo move to tmpfiles.d
 RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/container-auth.json && \
     chmod 0600 /usr/lib/container-auth.json && \
     ln -sr /usr/lib/container-auth.json /etc/ostree/auth.json
