@@ -203,7 +203,7 @@ jobs:
         run: |
           #podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
-          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
 
       - name: Manual Trivy Setup
         uses: aquasecurity/setup-trivy@v0.2.4
@@ -296,7 +296,7 @@ jobs:
         run: | #sh
           podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
-          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
 
       - name: Inspect images (Podman)
         id: meta
@@ -453,12 +453,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load latest image
+      - name: Load PR image
         shell: bash
         run: | #sh
-          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
-          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
+          podman load -q -i ${{ github.workspace }}/pr-image.tar.gz
+          podman images
 
       - name: Run container with safe privileges for testing
         run: |
