@@ -100,7 +100,7 @@ jobs:
         run: |
           umask 077
           printf '%s' "${{ secrets.PAT_RENOVATEBOT }}" > /tmp/REGISTRY_TOKEN
-          printf '%s' "${{ secrets.GITHUBRUNNER_TOKEN }}" > /tmp/PINGGY_TOKEN
+          printf '%s' "${{ secrets.GITHUBRUNNER_TOKEN }}" > /tmp/GITHUBRUNNER_TOKEN
           cp ${HOME}/.docker/config.json /tmp/creds
 
       - name: Use buildah build to create the image
