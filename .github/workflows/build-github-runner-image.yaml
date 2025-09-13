@@ -57,7 +57,7 @@ jobs:
       - name: Load image
         shell: bash
         run: |
-          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
+          podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest || true
           systemctl --user enable --now podman.socket # for trivy
           export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
 
