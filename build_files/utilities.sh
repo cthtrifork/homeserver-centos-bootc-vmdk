@@ -19,6 +19,7 @@ log "Installing kubectl"
 KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
 curl -sLo /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/${MACHINE}/${ARCH}/kubectl"
 install -o root -g root -m 0755 /tmp/kubectl /usr/bin/kubectl
+/usr/bin/kubectl completion bash >/etc/bash_completion.d/kubectl.sh
 
 log "Installing kubelogin"
 curl -sLo /tmp/kubelogin.zip \
