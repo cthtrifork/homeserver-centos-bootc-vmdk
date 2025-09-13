@@ -1,4 +1,4 @@
-name: Build bootable container image
+name: Build homeserver bootable container image
 on:
   schedule:
     - cron: "0 3 * * 0" # Runs at 03:00, only on Sunday for security patching
@@ -10,6 +10,8 @@ on:
     paths:
       - "Containerfile"
       - "config.toml"
+      - "system_files/"
+      - "build_files/"
       - ".github/workflows/build-bootc-images.yaml"
     branches:
       - main
