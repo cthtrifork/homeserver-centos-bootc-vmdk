@@ -20,7 +20,7 @@ RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git rsy
 RUN --mount=type=secret,id=githubrunner_token,required=true TOKEN="$(cat /run/secrets/githubrunner_token)" \
     ./config.sh --url https://github.com/cthtrifork/homeserver-centos-bootc --token $TOKEN
 
-RUN mkdir actions-runner && cd actions-runner
+WORKDIR actions-runner
 RUN curl -o actions-runner-linux-x64-2.328.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.328.0/actions-runner-linux-x64-2.328.0.tar.gz \
 	&& tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz && \
 	rm ./actions-runner-linux-x64-2.328.0.tar.gz
