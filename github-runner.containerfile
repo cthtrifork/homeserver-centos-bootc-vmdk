@@ -22,6 +22,7 @@ RUN curl -o actions-runner-linux-x64-2.328.0.tar.gz -L https://github.com/action
 	&& tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz && \
 	rm ./actions-runner-linux-x64-2.328.0.tar.gz
 
+ENV RUNNER_ALLOW_RUNASROOT="1"
 RUN --mount=type=secret,id=githubrunner_token,required=true TOKEN="$(cat /run/secrets/githubrunner_token)" \
     ./config.sh --url https://github.com/cthtrifork/homeserver-centos-bootc --token $TOKEN
 
