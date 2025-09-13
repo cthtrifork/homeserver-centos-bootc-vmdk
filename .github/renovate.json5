@@ -2,20 +2,25 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:best-practices",
+    ":disableDigestUpdates"
   ],
-
-  "rebaseWhen": "never",
-
+  "digest": {
+    "enabled": false
+  },
+  "rebaseWhen": "auto",
   "packageRules": [
     {
       "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      "pinDigests": false,
+      "matchUpdateTypes": ["major", "minor", "patch"]
     },
     {
-      "enabled": false,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
-      "matchDepTypes": ["container"],
-      "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
+        automerge: true,
+        "pinDigests": false,
+        matchManagers: [
+          'github-actions',
+        ],
+        matchUpdateTypes: ["major", "minor", "patch"]
     },
   ]
 }
