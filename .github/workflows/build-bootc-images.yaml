@@ -429,6 +429,7 @@ jobs:
 
   test:
     environment: dev
+    runs-on: ubuntu-latest
     needs: build-bootc-image
     if: ${{ github.event_name == 'pull_request' }}
     continue-on-error: false
@@ -491,4 +492,5 @@ jobs:
       - name: Stop test container
         if: always()
         run: podman rm -f bootc-test || true
+
 
