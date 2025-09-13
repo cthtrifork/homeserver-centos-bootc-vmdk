@@ -117,7 +117,7 @@ jobs:
             REGISTRY_USERNAME="${{ github.repository_owner }}"
             REGISTRY_URL=ghcr.io
           containerfiles: |
-            ${{ env.CONTEXT }}/Github-runner.containerfile
+            ${{ env.CONTEXT }}/github-runner.containerfile
           extra-args: |
             --secret id=registry_token,src=/tmp/REGISTRY_TOKEN
             --secret id=githubrunner_token,src=/tmp/GITHUBRUNNER_TOKEN
