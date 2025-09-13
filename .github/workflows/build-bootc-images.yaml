@@ -50,10 +50,10 @@ jobs:
 
     steps:
       - name: Clone the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Log in to the Container registry
-        uses: redhat-actions/podman-login@v1
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Use buildah build to create the image
         id: build-image
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
           context: ${{ env.CONTEXT }}
           image: ${{ env.IMAGE_NAME }}
@@ -133,13 +133,13 @@ jobs:
 
       - name: Upload PR image as a Github artifact
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pr-image
           path: "${{ github.workspace }}/pr-image.tar.gz"
 
       - name: Trivy (base:latest)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           format: json
@@ -152,7 +152,7 @@ jobs:
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
       - name: Upload trivy json report as a Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: base_trivy.json
           path: "${{ github.workspace }}/base_trivy.json"
@@ -172,7 +172,7 @@ jobs:
       - name: Push to Container registry
         if: ${{ github.event_name != 'pull_request' }}
         id: push-to-ghcr
-        uses: redhat-actions/push-to-registry@v2
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         with:
           image: ${{ steps.build-image.outputs.image }}
           tags: ${{ steps.metadata.outputs.tags }}
@@ -192,7 +192,7 @@ jobs:
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     steps:
       - name: Log in to the Container registry
-        uses: redhat-actions/podman-login@v1
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -206,12 +206,12 @@ jobs:
           export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
 
       - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
         with:
           cache: true
 
       - name: Trivy REPORT (base:latest)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           ignore-unfixed: true
@@ -225,7 +225,7 @@ jobs:
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@192325c86100d080feab897ff886c34abd4c83a3 # v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -233,7 +233,7 @@ jobs:
           category: trivy
 
       - name: Trivy SBOM (base:latest)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           image-ref: ${{ env.BASE_IMAGE }}
           scan-type: image
@@ -248,7 +248,7 @@ jobs:
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
       - name: Upload trivy report as a Github artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: trivy-sbom-report
           path: "${{ github.workspace }}/dependency-results.sbom.json"
@@ -268,7 +268,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@v0.2.4
+        uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
         with:
           cache: true
 
@@ -285,7 +285,7 @@ jobs:
           path: "${{ github.workspace }}"
 
       - name: Log in to the Container registry
-        uses: redhat-actions/podman-login@v1
+        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -334,7 +334,7 @@ jobs:
           echo "labels_changed=$LABELS_CHANGED" >> $GITHUB_OUTPUT
 
       - name: Trivy (PR)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           input: pr-image.tar.gz
           format: json
@@ -400,13 +400,13 @@ jobs:
           } > comment.md
 
       - name: Sticky PR comment (update in-place)
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2
         with:
           path: comment.md
           skip_unchanged: true
 
       - name: Trivy REPORT (PR)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           input: pr-image.tar.gz
           ignore-unfixed: true
@@ -420,7 +420,7 @@ jobs:
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@192325c86100d080feab897ff886c34abd4c83a3 # v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
