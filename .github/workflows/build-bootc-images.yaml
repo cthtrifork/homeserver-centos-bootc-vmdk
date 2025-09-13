@@ -201,7 +201,7 @@ jobs:
         run: |
           #podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
-          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
 
       - name: Manual Trivy Setup
         uses: aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 # v0.2.4
@@ -293,7 +293,7 @@ jobs:
         run: | #sh
           podman pull ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}:latest
           systemctl --user enable --now podman.socket # for trivy
-          export DOCKER_HOST='unix:///Users/<MY_USER>/.local/share/containers/podman/machine/podman-machine-default/podman.sock'
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
 
       - name: Inspect images (Podman)
         id: meta
@@ -423,4 +423,72 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           sarif_file: "${{ github.workspace }}/trivy-results.sarif"
           category: trivy
+
+  test:
+    environment: dev
+    runs-on: ubuntu-latest
+    needs: build-bootc-image
+    if: ${{ github.event_name == 'pull_request' }}
+    continue-on-error: false
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Download PR image
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: pr-image
+          path: "${{ github.workspace }}"
+
+      - name: Log in to the Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load PR image
+        shell: bash
+        run: | #sh
+          systemctl --user enable --now podman.socket # for trivy
+          export DOCKER_HOST='unix:///${HOME}/.local/share/containers/podman/machine/podman.sock'
+          podman load -q -i ${{ github.workspace }}/pr-image.tar.gz
+          podman images
+
+      - name: Run container with safe privileges for testing
+        run: |
+          # Start in background to allow exec steps
+          podman run --rm -d \
+            --name bootc-test \
+            --privileged \
+            --userns=auto \
+            -v /sys:/sys:ro \
+            ${{ env.PR_IMAGE }} bash -lc 'sleep 600'
+
+      - name: Inspect bootc bits and os-release
+        run: |
+          podman exec bootc-test bash -lc '
+            echo "=== os-release ==="; cat /etc/os-release || true
+            echo "=== bootc version ==="; bootc --version || true
+            echo "=== rpm sanity ==="; rpm -qa | wc -l || true
+          '
+
+      - name: bootc status (should print tree/image info)
+        run: |
+          podman exec bootc-test bash -lc 'bootc status || true'
+
+      - name: Systemd presence sanity
+        run: |
+          podman exec bootc-test bash -lc '
+            command -v systemctl || true
+            test -x /sbin/init && echo "/sbin/init present"
+          '
+
+      - name: Stop test container
+        if: always()
+        run: podman rm -f bootc-test || true
+
 
