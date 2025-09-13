@@ -17,13 +17,13 @@ RUN --mount=type=secret,id=creds,required=true cp /run/secrets/creds /usr/lib/co
 
 RUN dnf -y install dnf-plugins-core procps-ng curl file qemu-guest-agent git rsync unzip
 
-RUN --mount=type=secret,id=githubrunner_token,required=true TOKEN="$(cat /run/secrets/githubrunner_token)" \
-    ./config.sh --url https://github.com/cthtrifork/homeserver-centos-bootc --token $TOKEN
-
-WORKDIR actions-runner
+WORKDIR /usr/actions-runner
 RUN curl -o actions-runner-linux-x64-2.328.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.328.0/actions-runner-linux-x64-2.328.0.tar.gz \
 	&& tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz && \
 	rm ./actions-runner-linux-x64-2.328.0.tar.gz
+
+RUN --mount=type=secret,id=githubrunner_token,required=true TOKEN="$(cat /run/secrets/githubrunner_token)" \
+    ./config.sh --url https://github.com/cthtrifork/homeserver-centos-bootc --token $TOKEN
 
 # todo move to own service? https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application
 RUN ./svc.sh install
