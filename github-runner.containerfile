@@ -22,7 +22,8 @@ RUN --mount=type=secret,id=githubrunner_token,required=true TOKEN="$(cat /run/se
 
 RUN mkdir actions-runner && cd actions-runner
 RUN curl -o actions-runner-linux-x64-2.328.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.328.0/actions-runner-linux-x64-2.328.0.tar.gz \
-	&& tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz
+	&& tar xzf ./actions-runner-linux-x64-2.328.0.tar.gz && \
+	rm ./actions-runner-linux-x64-2.328.0.tar.gz
 
 # todo move to own service? https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application
 RUN ./svc.sh install
